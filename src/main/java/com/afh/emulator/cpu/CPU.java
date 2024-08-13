@@ -113,7 +113,7 @@ public class CPU {
         this.programCounter.setLow(this.memory[this.addressRegister.getOutput()]);
       }
       case ResetState.RESET_06 -> { // FFFC
-        this.state = CycleState.FETCH;
+        this.state = CycleState.EXECUTE;
         int latch = this.memory[this.addressRegister.getOutput()] << 8;
         this.addressRegister.setInput(latch + this.programCounter.getOutputLow());
         this.programCounter.setHigh(this.memory[this.addressRegister.getOutput()] );
