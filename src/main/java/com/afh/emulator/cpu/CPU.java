@@ -87,34 +87,36 @@ public class CPU {
     switch (resetstate) {
       case ResetState.RESET_01 -> {  // ? + 1
         this.state = ResetState.RESET_02;
-        this.addressRegister.setInput(0x100 + this.statusRegister.getOutput());
+        // Equivalent to setting latch to //0x01
+        this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
         this.stackPointer.decrement();
         this.programCounter.setLow(0xFC);
       }
       case ResetState.RESET_02 -> { // 100
         this.state = ResetState.RESET_03;
-        this.addressRegister.setInput(0x100 + this.statusRegister.getOutput());
+        this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
         this.stackPointer.decrement();
         this.programCounter.setHigh(0xFF);
       }
       case ResetState.RESET_03 -> { // 1FF
         this.state = ResetState.RESET_04;
-        this.addressRegister.setInput(this.programCounter.getOutput());
-        this.programCounter.decrement();
+        this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
       }
       case ResetState.RESET_04 -> { // 1FE
         this.state = ResetState.RESET_05;
         this.addressRegister.setInput(this.programCounter.getOutput());
-        this.programCounter.setLow(this.memory[this.addressRegister.getOutput()]);
+        this.programCounter.increment();
       }
       case ResetState.RESET_05 -> { // FFFC
         this.state = ResetState.RESET_06;
         this.addressRegister.setInput(this.programCounter.getOutput());
-        this.programCounter.setHigh(this.memory[this.addressRegister.getOutput()]);
+        this.programCounter.setLow(this.memory[this.addressRegister.getOutput()]);
       }
-      case ResetState.RESET_06 -> {
+      case ResetState.RESET_06 -> { // FFFC
         this.state = CycleState.FETCH;
-        this.addressRegister.setInput(this.programCounter.getOutput());
+        int latch = this.memory[this.addressRegister.getOutput()] << 8;
+        this.addressRegister.setInput(latch + this.programCounter.getOutputLow());
+        this.programCounter.setHigh(this.memory[this.addressRegister.getOutput()] );
       }
       }
   }
