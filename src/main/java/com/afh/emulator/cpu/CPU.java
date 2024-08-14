@@ -53,11 +53,9 @@ public class CPU {
   public void tick( boolean reset) {
     if (reset) {
       state = ResetState.RESET_01;
-      this.stackPointer.setInput(0x00);
-      return;
     }
     this.readWrite = true;
-    this.registerList.forEach(Register::tick);
+    this.registerList.forEach(register -> register.tick(reset));
     switch (state) {
       case ResetState resetstate -> reset( resetstate);
       case CycleState cycleState -> cycle( cycleState);
@@ -85,38 +83,38 @@ public class CPU {
 
   private void reset( ResetState resetstate) {
     switch (resetstate) {
-      case ResetState.RESET_01 -> {  // ? + 1
+      case ResetState.RESET_01 -> {
         this.state = ResetState.RESET_02;
-        // Equivalent to setting latch to //0x01
-        this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
-        this.stackPointer.decrement();
-        this.programCounter.setLow(0xFC);
       }
-      case ResetState.RESET_02 -> { // 100
+      case ResetState.RESET_02 -> {
         this.state = ResetState.RESET_03;
         this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
         this.stackPointer.decrement();
-        this.programCounter.setHigh(0xFF);
       }
-      case ResetState.RESET_03 -> { // 1FF
+      case ResetState.RESET_03 -> {
         this.state = ResetState.RESET_04;
         this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
+        this.stackPointer.decrement();
       }
-      case ResetState.RESET_04 -> { // 1FE
+      case ResetState.RESET_04 -> {
         this.state = ResetState.RESET_05;
-        this.addressRegister.setInput(this.programCounter.getOutput());
+        this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
+      }
+      case ResetState.RESET_05 -> {
+        this.state = ResetState.RESET_06;
+        this.addressRegister.setInput(0xFFFC);
         this.programCounter.increment();
       }
-      case ResetState.RESET_05 -> { // FFFC
-        this.state = ResetState.RESET_06;
-        this.addressRegister.setInput(this.programCounter.getOutput());
+      case ResetState.RESET_06 -> {
+        this.state = ResetState.RESET_07;
+        this.addressRegister.setInput(0xFFFD);
         this.programCounter.setLow(this.memory[this.addressRegister.getOutput()]);
       }
-      case ResetState.RESET_06 -> { // FFFC
+      case ResetState.RESET_07 -> {
         this.state = CycleState.EXECUTE;
         int latch = this.memory[this.addressRegister.getOutput()] << 8;
         this.addressRegister.setInput(latch + this.programCounter.getOutputLow());
-        this.programCounter.setHigh(this.memory[this.addressRegister.getOutput()] );
+        this.programCounter.setHigh(latch);
       }
       }
   }

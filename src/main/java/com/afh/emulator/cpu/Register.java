@@ -20,8 +20,8 @@ public class Register {
     this.mask = 0xFF;
   }
 
-  public void tick(){
-    this.output = this.input;
+  public void tick(boolean reset){
+    this.output = reset ? 0x00 : this.input;
   }
 
   public void increment() {
