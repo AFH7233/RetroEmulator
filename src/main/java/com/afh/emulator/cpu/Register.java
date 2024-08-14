@@ -43,20 +43,20 @@ public class Register {
   }
 
   public int getOutputLow() {
-    return this.output;
+    return this.output & 0x000000ff;
   }
 
   public int getOutputHigh() {
-    return this.output >> 8;
+    return (this.output & 0x0000ff00)>> 8;
   }
 
   public void setLow(int input){
     int temp = input & 0x000000ff;
-    this.input = temp;
+    this.input = (this.output & 0x0000ff00) | temp;
   }
 
   public void setHigh(int input){
     int temp = (input << 8) & 0x0000ff00;
-    this.input |= temp;
+    this.input = (this.output & 0xffff00ff) | temp;
   }
 }

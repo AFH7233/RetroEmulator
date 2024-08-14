@@ -6,7 +6,7 @@ import com.afh.emulator.states.ResetState;
 
 import java.util.List;
 
-public class CPU {
+public class EmbeddedSystem {
 
   private enum DataSource{
     ACC,
@@ -35,7 +35,7 @@ public class CPU {
   private CPUState state;
   private DataSource busSource;
 
-  public CPU(int size) {
+  public EmbeddedSystem() {
     this.accumulator = new Register();
     this.xRegister = new Register();
     this.yRegister = new Register();
@@ -47,7 +47,7 @@ public class CPU {
     registerList  = List.of(this.accumulator, this.xRegister, this.yRegister, this.statusRegister, this.stackPointer, this.instructionRegister, this.addressRegister, this.programCounter);
     this.state = ResetState.RESET_01;
     this.busSource = DataSource.X;
-    this.memory = new int[size];
+    this.memory = new int[0x0ffff];
   }
 
   public void tick( boolean reset) {
@@ -95,19 +95,21 @@ public class CPU {
         this.state = ResetState.RESET_04;
         this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
         this.stackPointer.decrement();
+        this.programCounter.setHigh(0xFF);
       }
       case ResetState.RESET_04 -> {
         this.state = ResetState.RESET_05;
         this.addressRegister.setInput(0x100 + this.stackPointer.getOutput());
+        this.programCounter.setLow(0xFC);
       }
       case ResetState.RESET_05 -> {
         this.state = ResetState.RESET_06;
-        this.addressRegister.setInput(0xFFFC);
+        this.addressRegister.setInput(this.programCounter.getOutput());
         this.programCounter.increment();
       }
       case ResetState.RESET_06 -> {
         this.state = ResetState.RESET_07;
-        this.addressRegister.setInput(0xFFFD);
+        this.addressRegister.setInput(this.programCounter.getOutput());
         this.programCounter.setLow(this.memory[this.addressRegister.getOutput()]);
       }
       case ResetState.RESET_07 -> {
