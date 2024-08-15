@@ -1,6 +1,6 @@
 package com.afh.emulator;
 
-import com.afh.emulator.cpu.EmbeddedSystem;
+import com.afh.emulator.system.EmbeddedSystem;
 
 public class Emulator {
   public static void main(String[] args) {

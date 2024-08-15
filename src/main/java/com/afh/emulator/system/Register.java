@@ -1,4 +1,4 @@
-package com.afh.emulator.cpu;
+package com.afh.emulator.system;
 
 public class Register {
   public enum Type {
@@ -52,11 +52,11 @@ public class Register {
 
   public void setLow(int input){
     int temp = input & 0x000000ff;
-    this.input = (this.output & 0x0000ff00) | temp;
+    this.input = (this.input & 0x0000ff00) | temp;
   }
 
   public void setHigh(int input){
     int temp = (input << 8) & 0x0000ff00;
-    this.input = (this.output & 0xffff00ff) | temp;
+    this.input = (this.input & 0xffff00ff) | temp;
   }
 }
