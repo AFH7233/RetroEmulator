@@ -26,6 +26,28 @@ public class StatusRegister {
     C = bits[0] && !reset;
   }
 
+  public void setInput(int input){
+    bits[0] = (input & 1) > 0;
+    bits[1] = (input & 2) > 0;
+    bits[2] = (input & 4) > 0;
+    bits[3] = (input & 8) > 0;
+    bits[4] = (input & 16) > 0;
+    bits[6] = (input & 64) > 0;
+    bits[7] = (input & 128) > 0;
+  }
+
+  public int getOutput(){
+    int output = 0;
+    output |= C ? 1 : 0;
+    output |= Z ? 2 : 0;
+    output |= I ? 4 : 0;
+    output |= D ? 8 : 0;
+    output |= B ? 16 : 0;
+    output |= V ? 128 : 0;
+    output |= N ? 256 : 0;
+    return output;
+  }
+
   public void setN(boolean n) {
     this.bits[7] = n;
   }

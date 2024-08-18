@@ -12,7 +12,7 @@ public class Register {
 
   public Register(Type type) {
     this.type = type;
-    this.mask = type.equals(Type.U8) ? 0xFF : 0xFFFF;
+    this.mask = type.equals(Type.U8) ? 0x000000FF : 0x0000FFFF;
   }
 
   public Register(){
