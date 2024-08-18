@@ -9,16 +9,16 @@ import java.util.List;
 
 public class EmbeddedSystem {
 
-  private final Register accumulator;
-  private final Register xRegister;
-  private final Register yRegister;
+  private final RegisterU8 accumulator;
+  private final RegisterU8 xRegister;
+  private final RegisterU8 yRegister;
   private final StatusRegister statusRegister;
-  private final Register stackPointer;
-  private final Register instructionRegister;
-  private final Register addressRegister;
-  private final Register programCounter;
-  private final Register dataRegister;
-  private final Register tempRegister;
+  private final RegisterU8 stackPointer;
+  private final RegisterU8 instructionRegister;
+  private final RegisterU16 addressRegister;
+  private final RegisterU16 programCounter;
+  private final RegisterU8 dataRegister;
+  private final RegisterU8 tempRegister;
 
   private final List<Register> registerList;
   private boolean readWrite;
@@ -27,16 +27,16 @@ public class EmbeddedSystem {
   private final DataSource busSource;
   private final DeviceManager deviceManager;
   public EmbeddedSystem(DeviceManager deviceManager) {
-    this.accumulator = new Register();
-    this.xRegister = new Register();
-    this.yRegister = new Register();
+    this.accumulator = new RegisterU8();
+    this.xRegister = new RegisterU8();
+    this.yRegister = new RegisterU8();
     this.statusRegister = new StatusRegister();
-    this.stackPointer = new Register();
-    this.instructionRegister = new Register();
-    this.programCounter = new Register(Register.Type.U16);
-    this.addressRegister = new Register(Register.Type.U16);
-    this.dataRegister = new Register();
-    this.tempRegister = new Register(Register.Type.U8);
+    this.stackPointer = new RegisterU8();
+    this.instructionRegister = new RegisterU8();
+    this.programCounter = new RegisterU16();
+    this.addressRegister = new RegisterU16();
+    this.dataRegister = new RegisterU8();
+    this.tempRegister = new RegisterU8();
     registerList = List.of(this.tempRegister, this.dataRegister, this.accumulator, this.xRegister, this.yRegister, this.stackPointer, this.instructionRegister, this.addressRegister, this.programCounter);
     this.state = CycleState.RESET;
     this.busSource = DataSource.X;
@@ -51,6 +51,7 @@ public class EmbeddedSystem {
     this.readWrite = true;
     this.statusRegister.tick(reset);
     this.registerList.forEach(register -> register.tick(reset));
+    this.deviceManager.tick(reset);
     switch (this.state) {
       case FETCH -> {
         this.state = CycleState.EXECUTE;
@@ -72,7 +73,7 @@ public class EmbeddedSystem {
       case DataSource.Y -> this.yRegister.getOutput();
       case DataSource.ACC -> this.accumulator.getOutput();
       case DataSource.PCL -> this.programCounter.getOutputLow();
-      case DataSource.PCH -> this.instructionRegister.getOutputHigh();
+      case DataSource.PCH -> this.instructionRegister.getOutput();
     };
   }
 
