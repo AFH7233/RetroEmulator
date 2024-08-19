@@ -17,6 +17,7 @@ static void absolute_x_read(struct cpu_internals* cpu, struct  device_manager* d
 static void absolute_y_read(struct cpu_internals* cpu, struct  device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t));
 static void index_indirect_read(struct cpu_internals* cpu, struct  device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t));
 static void indirect_index_read(struct cpu_internals* cpu, struct  device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t));
+
 static void adc_immediate_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
 static void adc_zeropage_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
 static void adc_zeropage_x_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
@@ -26,6 +27,15 @@ static void adc_absolute_y_handler(struct cpu_internals* cpu, struct  device_man
 static void adc_index_indirect_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
 static void adc_indirect_index_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
 
+static void and_immediate_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
+static void and_zeropage_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
+static void and_zeropage_x_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
+static void and_absolute_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
+static void and_absolute_x_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
+static void and_absolute_y_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
+static void and_index_indirect_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
+static void and_indirect_index_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
+
 static uint16_t add_address(uint8_t data, uint8_t acc);
 static uint8_t adc(struct cpu_internals* cpu, uint8_t data, uint8_t acc);
 static uint8_t and(struct cpu_internals* cpu, uint8_t data, uint8_t acc);
@@ -34,6 +44,7 @@ static void prepare_fetch(struct cpu_internals* cpu, struct device_manager* devi
 
 
 // This will be used instead of a switch case which was slower
+// I know I'm wasting some memory.
 typedef void (*handler)(struct cpu_internals* cpu, struct device_manager* device_manager); //just this time I'll use typedef
 handler opcode_handlers[256] = {
     [ADC_immediate] = adc_immediate_handler,
@@ -44,6 +55,15 @@ handler opcode_handlers[256] = {
     [ADC_absolute_Y] = adc_absolute_y_handler,
     [ADC_index_indirect] = adc_index_indirect_handler,
     [ADC_indirect_index] = adc_indirect_index_handler,
+
+    [AND_immediate] = and_immediate_handler,
+    [AND_zeropage] = and_zeropage_handler,
+    [AND_zeropage_X] = and_zeropage_x_handler,
+    [AND_absolute] = and_absolute_handler,
+    [AND_absolute_X] = and_absolute_x_handler,
+    [AND_absolute_Y] = and_absolute_y_handler,
+    [AND_index_indirect] = and_index_indirect_handler,
+    [AND_indirect_index] = and_indirect_index_handler,
 };
 
 void run(struct device_manager device_manager[1]) {
@@ -210,6 +230,54 @@ void adc_index_indirect_handler(struct cpu_internals* cpu, struct device_manager
 
 void adc_indirect_index_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
   indirect_index_read(cpu, device_manager, adc);
+  prepare_fetch(cpu, device_manager);
+  return;
+}
+
+void and_immediate_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
+  immediate_read(cpu, device_manager, and);
+  prepare_fetch(cpu, device_manager);
+  return;
+}
+
+void and_zeropage_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
+  zeropage_read(cpu, device_manager, and);
+  prepare_fetch(cpu, device_manager);
+  return;
+}
+
+void and_zeropage_x_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
+  zeropage_x_read(cpu, device_manager, and);
+  prepare_fetch(cpu, device_manager);
+  return;
+}
+
+void and_absolute_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
+  absolute_read(cpu, device_manager, and);
+  prepare_fetch(cpu, device_manager);
+  return;
+}
+
+void and_absolute_x_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
+  absolute_x_read(cpu, device_manager, and);
+  prepare_fetch(cpu, device_manager);
+  return;
+}
+
+void and_absolute_y_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
+  absolute_y_read(cpu, device_manager, and);
+  prepare_fetch(cpu, device_manager);
+  return;
+}
+
+void and_index_indirect_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
+  index_indirect_read(cpu, device_manager, and);
+  prepare_fetch(cpu, device_manager);
+  return;
+}
+
+void and_indirect_index_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
+  indirect_index_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
   return;
 }
