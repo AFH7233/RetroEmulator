@@ -1,0 +1,247 @@
+//
+// Created by Andres Fuentes Hernandez on 8/18/24.
+//
+
+#include <stdio.h>
+// #include <time.h>
+#include "embedded_system.h"
+#include "register.h"
+#include "opcodes.h"
+
+static void reset(struct cpu_internals* cpu, struct device_manager* device_manager);
+static void execute(struct cpu_internals* cpu, struct device_manager* device_manager);
+static void immediate_read(struct cpu_internals* cpu, struct device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t));
+static void zeropage_read(struct cpu_internals* cpu, struct  device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t));
+static void zeropage_x_read(struct cpu_internals* cpu, struct  device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t));
+static uint16_t addAddress(uint8_t data, uint8_t acc);
+static uint8_t adc(struct cpu_internals* cpu, uint8_t data, uint8_t acc);
+static uint8_t and(struct cpu_internals* cpu, uint8_t data, uint8_t acc);
+static uint8_t asl(struct cpu_internals* cpu, uint8_t data, uint8_t acc);
+static void prepate_fetch(struct cpu_internals* cpu, struct device_manager* device_manager);
+
+void run(struct device_manager device_manager[1]) {
+
+  struct cpu_internals cpu;
+  cpu.accumulator.input = 0;
+  cpu.x_register.input = 0;
+  cpu.y_register.input = 0;
+  cpu.status_register.input = 0;
+  cpu.stack_pointer.input = 0;
+  cpu.instruction_register.input = 0;
+  cpu.program_counter.input = 0;
+  cpu.address_register.input = 0;
+  cpu.data_register.input = 0;
+  cpu.temp_register.input = 0;
+
+  cpu.state = RESET;
+  cpu.micro_step = S0;
+
+  //struct timespec start, end;
+  // long nanoseconds;
+
+  bool run = true;
+  int index = 0;
+  while (run) {
+    //clock_gettime(CLOCK_MONOTONIC, &start);
+
+    //Clock cycle
+    cpu.accumulator.output = cpu.accumulator.input;
+    cpu.x_register.output = cpu.x_register.input;
+    cpu.y_register.output = cpu.y_register.input;
+    cpu.status_register.output = cpu.status_register.input;
+    cpu.stack_pointer.output = cpu.stack_pointer.input;
+    cpu.instruction_register.output = cpu.instruction_register.input;
+    cpu.program_counter.output = cpu.program_counter.input;
+    cpu.address_register.output = cpu.address_register.input;
+    cpu.data_register.output = cpu.data_register.input;
+    cpu.temp_register.output = cpu.temp_register.input;
+
+    switch (cpu.state) {
+      case FETCH: {
+        cpu.state = EXECUTE;
+        WRITE(cpu.address_register, READ(cpu.program_counter));
+        WRITE(cpu.instruction_register, read_device(device_manager, READ(cpu.address_register)));
+        INCREMENT(cpu.program_counter);
+      }
+        break;
+      case EXECUTE: {
+        execute(&cpu, device_manager);
+      }
+        break;
+      case RESET: {
+        reset(&cpu, device_manager);
+      }
+        break;
+      default: {}
+    }
+    //clock_gettime(CLOCK_MONOTONIC, &end);
+    // nanoseconds = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
+    // printf("Execution time: %ld nanoseconds\n", nanoseconds);
+    printf("R|%#06x\n", READ(cpu.address_register));
+    index++;
+    run = index < 10;
+  }
+}
+
+void reset(struct cpu_internals* cpu, struct device_manager* device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      cpu->micro_step = S2;
+      SET_HIGH(cpu->address_register, 0x01);
+      SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
+      DECREMENT(cpu->stack_pointer);
+      return;
+    }
+    case S2: {
+      cpu->micro_step = S3;
+      SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
+      DECREMENT(cpu->stack_pointer);
+      SET_HIGH(cpu->program_counter, 0xFF);
+      return;
+    }
+    case S3: {
+      cpu->micro_step = S4;
+      SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
+      SET_LOW(cpu->program_counter, 0xFC);
+      return;
+    }
+    case S4: {
+      cpu->micro_step = S5;
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      INCREMENT(cpu->program_counter);
+      return;
+    }
+    case S5: {
+      cpu->micro_step = S6;
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      SET_LOW(cpu->program_counter, read_device(device_manager, READ(cpu->address_register)));
+      return;
+    }
+    case S6: {
+      cpu->state = FETCH;
+      uint8_t bus_data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, GET_LOW(cpu->program_counter));
+      SET_HIGH(cpu->address_register, bus_data);
+      INCREMENT(cpu->program_counter);
+      SET_HIGH(cpu->program_counter, bus_data);
+      return;
+    }
+    default: fprintf(stderr, "Wrong!!!!");
+  }
+
+}
+
+void execute(struct cpu_internals* cpu, struct device_manager* device_manager){
+  enum opcode opcode = lookup_table[READ(cpu->instruction_register)];
+  switch (opcode) {
+    case ADC_immediate: {
+      immediate_read(cpu, device_manager, adc);
+      prepate_fetch(cpu, device_manager);
+      return;
+    }
+    case ADC_zeropage: {
+      zeropage_read(cpu, device_manager, adc);
+      prepate_fetch(cpu, device_manager);
+      return;
+    }
+    case ADC_zeropage_X: {
+      zeropage_x_read(cpu, device_manager, adc);
+      prepate_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong opcode!!!!");
+  }
+}
+
+void prepate_fetch(struct cpu_internals* cpu, struct device_manager* device_manager) {
+  WRITE(cpu->address_register, READ(cpu->program_counter));
+  INCREMENT(cpu->program_counter);
+  cpu->state = FETCH;
+}
+
+void immediate_read(struct cpu_internals* cpu, struct device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t)) {
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  uint8_t result = alu(cpu, data, READ(cpu->accumulator));
+  WRITE(cpu->accumulator, result);
+}
+
+void zeropage_read(struct cpu_internals* cpu, struct  device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t)){
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint8_t result = alu(cpu, data, READ(cpu->accumulator));
+      WRITE(cpu->accumulator, result);
+      return;
+    }
+    default: fprintf(stderr, "Wrong zeropage step!!!!");
+  }
+}
+
+void zeropage_x_read(struct cpu_internals* cpu, struct  device_manager* device_manager, uint8_t (*alu) (struct cpu_internals*, uint8_t, uint8_t)){
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint16_t result = addAddress(READ(cpu->x_register), READ(cpu->address_register));
+      SET_LOW(cpu->address_register, (result & 0x000000ff));
+      cpu->micro_step = S2;
+    }
+    case S2: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint8_t  result = alu(cpu, data, READ(cpu->accumulator));
+      WRITE(cpu->accumulator, result);
+    }
+    default: fprintf(stderr, "Wrong zeropage X step!!!!");
+  }
+}
+
+uint16_t addAddress(uint8_t data, uint8_t acc) {
+  uint16_t result = ((uint16_t) data) + ((uint16_t) acc);
+  return (result & 0x000001ff);
+}
+
+uint8_t adc(struct cpu_internals* cpu, uint8_t data, uint8_t acc) {
+  uint16_t carry = (READ(cpu->status_register) & C_MASK_SET);
+  uint16_t result = ((uint16_t) data) + ((uint16_t) acc) + carry;
+  bool bothNegative = ((data & N_MASK_SET) == N_MASK_SET) && ((acc & N_MASK_SET) == N_MASK_SET);
+  bool bothPositive = ((data & N_MASK_SET) == 0) && ((acc & N_MASK_SET) == 0);
+  bool V = (bothNegative && ((data & N_MASK_SET) == 0)) || (bothPositive && ((data & N_MASK_SET) == N_MASK_SET));
+  WRITE(cpu->status_register, 0);
+  SET_BIT(cpu->status_register, (((uint8_t)(result > 0xff)) << C_FLAG) );
+  SET_BIT(cpu->status_register, (((uint8_t)((result & 0x000000ff) == 0)) << Z_FLAG));
+  SET_BIT(cpu->status_register,  (((uint8_t)((result & N_MASK_SET) == N_MASK_SET)) << N_FLAG));
+  SET_BIT(cpu->status_register, (((uint8_t) V) << V_FLAG));
+  return (uint8_t) (result & 0x000000ff);
+}
+
+uint8_t and(struct cpu_internals* cpu, uint8_t data, uint8_t acc) {
+  uint8_t result = data & acc;
+  WRITE(cpu->status_register, 0);
+  SET_BIT(cpu->status_register, (((uint8_t)(result == 0)) << Z_FLAG));
+  SET_BIT(cpu->status_register,  (((uint8_t)((result & N_MASK_SET) == N_MASK_SET)) << N_FLAG));
+  return result;
+}
+
+uint8_t asl(struct cpu_internals* cpu, uint8_t data, uint8_t acc) {
+  uint16_t result = ((uint16_t)data) << 1;
+  WRITE(cpu->status_register, 0);
+  SET_BIT(cpu->status_register, (((uint8_t)(result > 0xff)) << Z_FLAG));
+  return (uint8_t)(result & 0x000000ff);
+}
+
