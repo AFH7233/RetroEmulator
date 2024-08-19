@@ -11,3 +11,4 @@ cmake-build-debug/*
 *.rar
 
 .idea/*
+.DS_Store
