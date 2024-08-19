@@ -4,7 +4,7 @@
 #include "lib/memory.h"
 
 int main(int argc, char* argv[]) {
-  // Intialize manager
+  // Initialize manager
   struct device_manager device_manager;
   for(size_t i=0; i<0x0FFFF; i++){
     device_manager.devices[i] = (struct bus_device){
@@ -36,6 +36,8 @@ int main(int argc, char* argv[]) {
   //Write test values
   write_device(&device_manager, 0xfffc, 0x00);
   write_device(&device_manager, 0xfffd, 0x10);
+  write_device(&device_manager, 0x1000, 0x69);
+  write_device(&device_manager, 0x1001, 0x50);
 
   // run processor
   run(&device_manager);
