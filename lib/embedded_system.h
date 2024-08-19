@@ -11,6 +11,7 @@ enum cpu_state {
   RESET = 0,
   FETCH,
   EXECUTE,
+  HALT,
 };
 
 enum micro_state {

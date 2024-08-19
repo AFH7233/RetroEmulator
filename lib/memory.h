@@ -10,7 +10,7 @@
 struct memory {
   uint16_t start;
   uint16_t end;
-  uint8_t slots[];
+  uint8_t slots[0xFFFF]; // Allways 256 even though some memory wont be used
 };
 // this should have a clock method for write
 uint8_t read_memory (struct memory*, uint16_t);

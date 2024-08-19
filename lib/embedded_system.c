@@ -36,6 +36,8 @@ static void and_absolute_y_handler(struct cpu_internals* cpu, struct  device_man
 static void and_index_indirect_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
 static void and_indirect_index_handler(struct cpu_internals* cpu, struct  device_manager* device_manager);
 
+static void halt(struct cpu_internals* cpu, struct  device_manager* device_manager);
+
 static uint16_t add_address(uint8_t data, uint8_t acc);
 static uint8_t adc(struct cpu_internals* cpu, uint8_t data, uint8_t acc);
 static uint8_t and(struct cpu_internals* cpu, uint8_t data, uint8_t acc);
@@ -64,6 +66,8 @@ handler opcode_handlers[256] = {
     [AND_absolute_Y] = and_absolute_y_handler,
     [AND_index_indirect] = and_index_indirect_handler,
     [AND_indirect_index] = and_indirect_index_handler,
+
+    [HALT_CODE] = halt,
 };
 
 void run(struct device_manager device_manager[1]) {
@@ -120,15 +124,18 @@ void run(struct device_manager device_manager[1]) {
         reset(&cpu, device_manager);
       }
       break;
+      case HALT: {
+        cpu.state = HALT;
+      }
       default: {}
     }
     clock_gettime(CLOCK_MONOTONIC, &end);
      nanoseconds = (end.tv_sec - start.tv_sec) * 1000000000L + (end.tv_nsec - start.tv_nsec);
      printf("Execution time: %ld nanoseconds\n", nanoseconds);
-    printf("R|%#06x\n", READ(cpu.address_register));
+    printf("%d\t|\t%#06x\n", index, READ(cpu.address_register));
 
     index++;
-    run = index < 10;
+    run = index < 100;
   }
   printf("accumulator:\t%#06x\n", READ(cpu.accumulator));
 
@@ -279,6 +286,11 @@ void and_index_indirect_handler(struct cpu_internals* cpu, struct device_manager
 void and_indirect_index_handler(struct cpu_internals* cpu, struct device_manager* device_manager){
   indirect_index_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
+  return;
+}
+
+static void halt(struct cpu_internals* cpu, struct  device_manager* device_manager){
+  cpu->state = HALT;
   return;
 }
 

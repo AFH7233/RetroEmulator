@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 struct bus_device {
-  bool isPreset;
   void* hardware;
   uint8_t (*read)(void*, uint16_t);
   void (*write)(void*, uint16_t, uint8_t);

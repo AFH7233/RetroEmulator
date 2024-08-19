@@ -48,7 +48,7 @@ enum opcode {
   BIT_zeropage = 0x24,
   BIT_absolute = 0x2C,
 
-  INVALID_OPCODE = 0xFF
+  HALT_CODE = 0xFF
 };
 
 #endif //RETRO_EMULATOR_LIB_OPCODES_H_
