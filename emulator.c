@@ -39,8 +39,12 @@ int main(int argc, char *argv[]) {
   write_device(&device_manager, 0x1000, 0x69);
   write_device(&device_manager, 0x1001, 0x50);
   write_device(&device_manager, 0x1002, 0xFF);
-
+  struct cpu_internals cpu = new_cpu();
   // run processor
-  run(&device_manager);
+  int index = 0;
+  while(index < 7){
+    tick(&cpu, &device_manager);
+    index++;
+  }
   return 0;
 }

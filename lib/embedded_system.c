@@ -100,8 +100,7 @@ cpu_state_handler cpu_state_handlers[5] = {
     [HALT] = halt
 };
 
-void run(struct device_manager device_manager[1]) {
-
+struct cpu_internals new_cpu() {
   struct cpu_internals cpu;
   cpu.accumulator.input = 0;
   cpu.x_register.input = 0;
@@ -116,33 +115,24 @@ void run(struct device_manager device_manager[1]) {
 
   cpu.state = RESET;
   cpu.micro_step = S0;
+  return cpu;
+}
 
-  bool run = true;
-  int index = 0;
-  while (run) {
+void tick(struct cpu_internals cpu[1], struct device_manager device_manager[1]) {
+  //Clock cycle
+  cpu->accumulator.output = cpu->accumulator.input;
+  cpu->x_register.output = cpu->x_register.input;
+  cpu->y_register.output = cpu->y_register.input;
+  cpu->status_register.output = cpu->status_register.input;
+  cpu->stack_pointer.output = cpu->stack_pointer.input;
+  cpu->instruction_register.output = cpu->instruction_register.input;
+  cpu->program_counter.output = cpu->program_counter.input;
+  cpu->address_register.output = cpu->address_register.input;
+  cpu->data_register.output = cpu->data_register.input;
+  cpu->temp_register.output = cpu->temp_register.input;
 
-    //Clock cycle
-    cpu.accumulator.output = cpu.accumulator.input;
-    cpu.x_register.output = cpu.x_register.input;
-    cpu.y_register.output = cpu.y_register.input;
-    cpu.status_register.output = cpu.status_register.input;
-    cpu.stack_pointer.output = cpu.stack_pointer.input;
-    cpu.instruction_register.output = cpu.instruction_register.input;
-    cpu.program_counter.output = cpu.program_counter.input;
-    cpu.address_register.output = cpu.address_register.input;
-    cpu.data_register.output = cpu.data_register.input;
-    cpu.temp_register.output = cpu.temp_register.input;
-
-    cpu_state_handler state_handler = cpu_state_handlers[cpu.state];
-    state_handler(&cpu, device_manager);
-
-    printf("%d\t|\t%#06x\n", index, READ(cpu.address_register));
-
-    index++;
-    run = index < 10;
-  }
-  printf("accumulator:\t%#06x\n", READ(cpu.accumulator));
-
+  cpu_state_handler state_handler = cpu_state_handlers[cpu->state];
+  state_handler(cpu, device_manager);
 }
 
 void execute(struct cpu_internals *cpu, struct device_manager *device_manager) {
@@ -305,7 +295,7 @@ void and_indirect_index_handler(struct cpu_internals *cpu, struct device_manager
   return;
 }
 
-void asl_accumulator_handler(struct cpu_internals *cpu, struct device_manager *device_manager){
+void asl_accumulator_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   uint8_t result = asl(cpu, READ(cpu->accumulator));
   WRITE(cpu->accumulator, result);
   prepare_fetch(cpu, device_manager);
