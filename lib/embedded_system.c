@@ -601,8 +601,8 @@ void bit_zeropage_handler(struct cpu_internals *cpu, struct device_manager *devi
     case S1: {
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
       uint8_t result = and(cpu, READ(cpu->accumulator), data);
-      OR_BIT(cpu->status_register, ((result & N_MASK_SET) > 0) << N_FLAG);
-      OR_BIT(cpu->status_register, ((result & V_MASK_SET) > 0) << V_FLAG);
+      SET_OR_CLEAR_BIT(cpu->status_register, (result & N_MASK_SET) > 0, N_FLAG);
+      SET_OR_CLEAR_BIT(cpu->status_register, (result & V_MASK_SET) > 0, V_FLAG);
       prepare_fetch(cpu, device_manager);
       return;
     }
@@ -630,8 +630,8 @@ void bit_absolute_handler(struct cpu_internals *cpu, struct device_manager *devi
     case S2: {
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
       uint8_t result = and(cpu, READ(cpu->accumulator), data);
-      OR_BIT(cpu->status_register, ((result & N_MASK_SET) > 0) << N_FLAG);
-      OR_BIT(cpu->status_register, ((result & V_MASK_SET) > 0) << V_FLAG);
+      SET_OR_CLEAR_BIT(cpu->status_register, (result & N_MASK_SET) > 0, N_FLAG);
+      SET_OR_CLEAR_BIT(cpu->status_register, (result & V_MASK_SET) > 0, V_FLAG);
       prepare_fetch(cpu, device_manager);
     }
     default: fprintf(stderr, "Wrong bit_absolute_handler step!!!!");
