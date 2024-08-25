@@ -53,7 +53,23 @@ enum opcode {
   CLI = 0x58,
   CLV = 0xB8,
 
+  // Compare instructions
+  CMP_immediate = 0xC9,
+  CMP_zeropage = 0xC5,
+  CMP_zeropage_X = 0xD5,
+  CMP_absolute = 0xCD,
+  CMP_absolute_X = 0xDD,
+  CMP_absolute_Y = 0xD9,
+  CMP_indirect_index = 0xC1,
+  CMP_index_indirect = 0xD1,
 
+  CPX_immediate = 0xE0,
+  CPX_zeropage = 0xE4,
+  CPX_absolute = 0xEC,
+
+  CPY_immediate = 0xC0,
+  CPY_zeropage = 0xC4,
+  CPY_absolute = 0xCC,
 
   HALT_CODE = 0xFF
 };
