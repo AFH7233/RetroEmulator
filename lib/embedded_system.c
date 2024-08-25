@@ -56,6 +56,30 @@ static void and_index_indirect_handler(struct cpu_internals *cpu, struct device_
 static void and_indirect_index_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
 
 static void asl_accumulator_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void asl_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void asl_zeropage_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void asl_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void asl_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+
+static void bcc_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void bcs_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void beq_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void bne_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void bmi_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void bpl_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void bvc_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void bvs_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+
+static void bit_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void bit_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+
+static void clc_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void cld_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void cli_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void clv_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+
+static void branch_handler_positive(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void branch_handler_negative(struct cpu_internals *cpu, struct device_manager *device_manager);
 
 static uint16_t add_address(uint8_t data, uint8_t acc);
 static uint8_t adc(struct cpu_internals *cpu, uint8_t data, uint8_t acc);
@@ -66,8 +90,8 @@ static void prepare_fetch(struct cpu_internals *cpu, struct device_manager *devi
 // This will be used instead of a switch case which was slower
 // I know I'm wasting some memory.
 typedef void
-(*opcode_handler)(struct cpu_internals *cpu, struct device_manager *device_manager); //just this time I'll use typedef
-opcode_handler opcode_handlers[256] = {
+(*generic_handler)(struct cpu_internals *cpu, struct device_manager *device_manager);
+static generic_handler opcode_handlers[256] = {
     [ADC_immediate] = adc_immediate_handler,
     [ADC_zeropage] = adc_zeropage_handler,
     [ADC_zeropage_X] = adc_zeropage_x_handler,
@@ -87,20 +111,39 @@ opcode_handler opcode_handlers[256] = {
     [AND_indirect_index] = and_indirect_index_handler,
 
     [ASL_accumulator] = asl_accumulator_handler,
+    [ASL_zeropage] = asl_zeropage_handler,
+    [ASL_zeropage_X] = asl_zeropage_x_handler,
+    [ASL_absolute] = asl_absolute_handler,
+    [ASL_absolute_X] = asl_absolute_x_handler,
+
+    [BCC] = bcc_handler,
+    [BCS] = bcs_handler,
+    [BEQ] = beq_handler,
+    [BNE] = bne_handler,
+    [BMI] = bmi_handler,
+    [BPL] = bpl_handler,
+    [BVC] = bvc_handler,
+    [BVS] = bvs_handler,
+
+    [BIT_zeropage] = bit_zeropage_handler,
+    [BIT_absolute] = bit_absolute_handler,
+
+    [CLC] = clc_handler,
+    [CLD] = cld_handler,
+    [CLI] = cli_handler,
+    [CLV] = clv_handler,
 
     [HALT_CODE] = halt,
 };
 
-typedef void(*cpu_state_handler)
-    (struct cpu_internals *cpu, struct device_manager *device_manager); //just this time I'll use typedef
-cpu_state_handler cpu_state_handlers[5] = {
+static generic_handler cpu_state_handlers[5] = {
     [RESET] = reset,
     [FETCH] = fetch,
     [EXECUTE] = execute,
     [HALT] = halt
 };
 
-struct cpu_internals new_cpu() {
+struct cpu_internals new_cpu(void) {
   struct cpu_internals cpu;
   cpu.accumulator.input = 0;
   cpu.x_register.input = 0;
@@ -131,12 +174,12 @@ void tick(struct cpu_internals cpu[1], struct device_manager device_manager[1]) 
   cpu->data_register.output = cpu->data_register.input;
   cpu->temp_register.output = cpu->temp_register.input;
 
-  cpu_state_handler state_handler = cpu_state_handlers[cpu->state];
+  generic_handler state_handler = cpu_state_handlers[cpu->state];
   state_handler(cpu, device_manager);
 }
 
 void execute(struct cpu_internals *cpu, struct device_manager *device_manager) {
-  opcode_handler instruction = opcode_handlers[READ(cpu->instruction_register)];
+  generic_handler instruction = opcode_handlers[READ(cpu->instruction_register)];
   instruction(cpu, device_manager);
 }
 
@@ -202,97 +245,81 @@ void reset(struct cpu_internals *cpu, struct device_manager *device_manager) {
 void adc_immediate_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   immediate_read(cpu, device_manager, adc);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void adc_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   zeropage_read(cpu, device_manager, adc);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void adc_zeropage_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   zeropage_x_read(cpu, device_manager, adc);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void adc_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   absolute_read(cpu, device_manager, adc);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void adc_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   absolute_x_read(cpu, device_manager, adc);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void adc_absolute_y_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   absolute_y_read(cpu, device_manager, adc);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void adc_index_indirect_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   index_indirect_read(cpu, device_manager, adc);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void adc_indirect_index_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   indirect_index_read(cpu, device_manager, adc);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void and_immediate_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   immediate_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void and_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   zeropage_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void and_zeropage_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   zeropage_x_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void and_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   absolute_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void and_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   absolute_x_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void and_absolute_y_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   absolute_y_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void and_index_indirect_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   index_indirect_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void and_indirect_index_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   indirect_index_read(cpu, device_manager, and);
   prepare_fetch(cpu, device_manager);
-  return;
 }
 
 void asl_accumulator_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
@@ -301,9 +328,386 @@ void asl_accumulator_handler(struct cpu_internals *cpu, struct device_manager *d
   prepare_fetch(cpu, device_manager);
 }
 
+void asl_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint8_t result = asl(cpu, data);
+      WRITE(cpu->data_register, result);
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      cpu->micro_step = S3;
+      return;
+    }
+    case S3: {
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong asl_zeropage_handler step!!!!");
+  }
+}
+
+void asl_zeropage_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint16_t result = add_address(READ(cpu->x_register), READ(cpu->address_register));
+      SET_LOW(cpu->address_register, (result & 0x000000ff));
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint8_t result = asl(cpu, data);
+      WRITE(cpu->data_register, result);
+      cpu->micro_step = S3;
+      return;
+    }
+    case S3: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      cpu->micro_step = S4;
+      return;
+    }
+    case S4: {
+      prepare_fetch(cpu, device_manager);
+    }
+    default: fprintf(stderr, "Wrong asl_zeropage_x_handler step!!!!");
+  }
+}
+
+void asl_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      WRITE(cpu->temp_register, data);
+      INCREMENT(cpu->program_counter);
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, READ(cpu->temp_register));
+      SET_HIGH(cpu->address_register, data);
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint8_t result = asl(cpu, data);
+      WRITE(cpu->data_register, result);
+      cpu->micro_step = S3;
+      return;
+    }
+    case S3: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      cpu->micro_step = S4;
+      return;
+    }
+    case S4: {
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong asl_absolute_handler step!!!!");
+  }
+}
+
+void asl_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      WRITE(cpu->temp_register, data);
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      cpu->micro_step = S1;
+      INCREMENT(cpu->program_counter);
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint16_t result = add_address(READ(cpu->temp_register), READ(cpu->x_register));
+      cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S2 : S3;
+      SET_LOW(cpu->address_register, result & 0xFF);
+      SET_HIGH(cpu->address_register, data);
+      INCREMENT(cpu->program_counter);
+      return;
+    }
+    case S2: {
+      uint16_t result = add_address(GET_HIGH(cpu->address_register), 1);
+      SET_HIGH(cpu->address_register, result & 0xFF);
+      cpu->micro_step = S3;
+      return;
+    }
+    case S3: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint8_t result = asl(cpu, data);
+      WRITE(cpu->data_register, result);
+      cpu->micro_step = S4;
+      return;
+    }
+    case S4: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      cpu->micro_step = S5;
+      return;
+    }
+    case S5: {
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong asl_absolute_x_handler step!!!!");
+  }
+}
+
+void bcc_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  // This is an attempt to reduce branching in the doe to make it faster.
+  // lower bit is if data is positive or negative
+  // higher bit is if the branch condition is met
+  // But the question remains, is this really faster?
+  static generic_handler branch[] = {
+      [0] = prepare_fetch,
+      [1] = prepare_fetch,
+      [2] = branch_handler_positive,
+      [3] = branch_handler_negative
+  };
+  bool condition = (READ(cpu->status_register) & C_MASK_SET) == 0;
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  bool isN = (data & N_MASK_SET) > 0;
+  uint8_t index = (condition << 1) | isN;
+  branch[index](cpu, device_manager);
+}
+
+void bcs_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  static generic_handler branch[] = {
+      [0] = prepare_fetch,
+      [1] = prepare_fetch,
+      [2] = branch_handler_positive,
+      [3] = branch_handler_negative
+  };
+  bool condition = (READ(cpu->status_register) & C_MASK_SET) > 0;
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  bool isN = (data & N_MASK_SET) > 0;
+  uint8_t index = (condition << 1) | isN;
+  branch[index](cpu, device_manager);
+}
+
+void beq_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  static generic_handler branch[] = {
+      [0] = prepare_fetch,
+      [1] = prepare_fetch,
+      [2] = branch_handler_positive,
+      [3] = branch_handler_negative
+  };
+  bool condition = (READ(cpu->status_register) & Z_MASK_SET) > 0;
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  bool isN = (data & N_MASK_SET) > 0;
+  uint8_t index = (condition << 1) | isN;
+  branch[index](cpu, device_manager);
+}
+
+void bne_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  static generic_handler branch[] = {
+      [0] = prepare_fetch,
+      [1] = prepare_fetch,
+      [2] = branch_handler_positive,
+      [3] = branch_handler_negative
+  };
+  bool condition = (READ(cpu->status_register) & Z_MASK_SET) == 0;
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  bool isN = (data & N_MASK_SET) > 0;
+  uint8_t index = (condition << 1) | isN;
+  branch[index](cpu, device_manager);
+}
+
+void bmi_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  static generic_handler branch[] = {
+      [0] = prepare_fetch,
+      [1] = prepare_fetch,
+      [2] = branch_handler_positive,
+      [3] = branch_handler_negative
+  };
+  bool condition = (READ(cpu->status_register) & N_MASK_SET) > 0;
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  bool isN = (data & N_MASK_SET) > 0;
+  uint8_t index = (condition << 1) | isN;
+  branch[index](cpu, device_manager);
+}
+
+void bpl_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  static generic_handler branch[] = {
+      [0] = prepare_fetch,
+      [1] = prepare_fetch,
+      [2] = branch_handler_positive,
+      [3] = branch_handler_negative
+  };
+  bool condition = (READ(cpu->status_register) & N_MASK_SET) == 0;
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  bool isN = (data & N_MASK_SET) > 0;
+  uint8_t index = (condition << 1) | isN;
+  branch[index](cpu, device_manager);
+}
+
+void bvc_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  static generic_handler branch[] = {
+      [0] = prepare_fetch,
+      [1] = prepare_fetch,
+      [2] = branch_handler_positive,
+      [3] = branch_handler_negative
+  };
+  bool condition = (READ(cpu->status_register) & V_MASK_SET) == 0;
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  bool isN = (data & N_MASK_SET) > 0;
+  uint8_t index = (condition << 1) | isN;
+  branch[index](cpu, device_manager);
+}
+
+void bvs_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  static generic_handler branch[] = {
+      [0] = prepare_fetch,
+      [1] = prepare_fetch,
+      [2] = branch_handler_positive,
+      [3] = branch_handler_negative
+  };
+  bool condition = (READ(cpu->status_register) & N_MASK_SET) > 0;
+  uint8_t data = read_device(device_manager, READ(cpu->address_register));
+  bool isN = (data & N_MASK_SET) > 0;
+  uint8_t index = (condition << 1) | isN;
+  branch[index](cpu, device_manager);
+}
+
+void bit_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint8_t result = and(cpu, READ(cpu->accumulator), data);
+      OR_BIT(cpu->status_register, ((result & N_MASK_SET) > 0) << N_FLAG);
+      OR_BIT(cpu->status_register, ((result & V_MASK_SET) > 0) << V_FLAG);
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong bit_zeropage_handler step!!!!");
+  }
+}
+
+void bit_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      WRITE(cpu->temp_register, data);
+      INCREMENT(cpu->program_counter);
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, READ(cpu->temp_register));
+      SET_HIGH(cpu->address_register, data);
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint8_t result = and(cpu, READ(cpu->accumulator), data);
+      OR_BIT(cpu->status_register, ((result & N_MASK_SET) > 0) << N_FLAG);
+      OR_BIT(cpu->status_register, ((result & V_MASK_SET) > 0) << V_FLAG);
+      prepare_fetch(cpu, device_manager);
+    }
+    default: fprintf(stderr, "Wrong bit_absolute_handler step!!!!");
+  }
+}
+
+void clc_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  CLEAR_BIT(cpu->status_register, C_FLAG);
+  prepare_fetch(cpu, device_manager);
+}
+
+void cld_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  CLEAR_BIT(cpu->status_register, D_FLAG);
+  prepare_fetch(cpu, device_manager);
+}
+
+void cli_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  CLEAR_BIT(cpu->status_register, I_FLAG);
+  prepare_fetch(cpu, device_manager);
+}
+
+void clv_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  CLEAR_BIT(cpu->status_register, V_FLAG);
+  prepare_fetch(cpu, device_manager);
+}
+
+void branch_handler_positive(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint16_t result = add_address(GET_LOW(cpu->program_counter), data);
+      SET_LOW(cpu->program_counter, (result & 0x000000ff));
+      cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S1 : S2;
+      return;
+    }
+    case S1: {
+      uint16_t result = add_address(GET_HIGH(cpu->program_counter), 1);
+      SET_HIGH(cpu->program_counter, (result & 0x000000ff));
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      cpu->state = FETCH;
+      return;
+    }
+    default: fprintf(stderr, "Wrong branch_handler_positive step!!!!");
+  }
+}
+
+void branch_handler_negative(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint16_t result = add_address(GET_LOW(cpu->program_counter), data);
+      SET_LOW(cpu->program_counter, (result & 0x000000ff));
+      cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S1 : S2;
+      return;
+    }
+    case S1: {
+      uint16_t result = add_address(GET_HIGH(cpu->program_counter), 0xFF); // This represents -1 in 8 bit
+      SET_HIGH(cpu->program_counter, (result & 0x000000ff));
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      cpu->state = FETCH;
+      return;
+    }
+    default: fprintf(stderr, "Wrong branch_handler_negative step!!!!");
+  }
+}
+
 static void halt(struct cpu_internals *cpu, struct device_manager *device_manager) {
   cpu->state = HALT;
-  return;
 }
 
 void prepare_fetch(struct cpu_internals *cpu, struct device_manager *device_manager) {
@@ -413,7 +817,7 @@ void absolute_x_read(struct cpu_internals *cpu,
       SET_LOW(cpu->address_register, (result & 0x00ff));
       SET_HIGH(cpu->address_register, data);
       INCREMENT(cpu->program_counter);
-      cpu->micro_step = (result & N_MASK_SET) > 0 ? S2 : S3;
+      cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S2 : S3;
       return;
     }
     case S2: {
@@ -450,7 +854,7 @@ void absolute_y_read(struct cpu_internals *cpu,
       SET_LOW(cpu->address_register, (result & 0x00ff));
       SET_HIGH(cpu->address_register, data);
       INCREMENT(cpu->program_counter);
-      cpu->micro_step = (result & N_MASK_SET) > 0 ? S2 : S3;
+      cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S2 : S3;
       return;
     }
     case S2: {
@@ -535,7 +939,7 @@ void indirect_index_read(struct cpu_internals *cpu,
       uint16_t result = add_address(READ(cpu->temp_register), READ(cpu->y_register));
       SET_LOW(cpu->address_register, (result & 0x000000ff));
       SET_HIGH(cpu->address_register, data);
-      cpu->micro_step = (result & N_MASK_SET) > 0 ? S3 : S4;
+      cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S3 : S4;
       return;
     }
     case S3: {
@@ -565,26 +969,32 @@ uint8_t adc(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
   bool bothNegative = ((data & N_MASK_SET) == N_MASK_SET) && ((acc & N_MASK_SET) == N_MASK_SET);
   bool bothPositive = ((data & N_MASK_SET) == 0) && ((acc & N_MASK_SET) == 0);
   bool V = (bothNegative && ((data & N_MASK_SET) == 0)) || (bothPositive && ((data & N_MASK_SET) == N_MASK_SET));
-  WRITE(cpu->status_register, 0);
-  SET_BIT(cpu->status_register, (((uint8_t) (result > 0xff)) << C_FLAG));
-  SET_BIT(cpu->status_register, (((uint8_t) ((result & 0x000000ff) == 0)) << Z_FLAG));
-  SET_BIT(cpu->status_register, (((uint8_t) ((result & N_MASK_SET) == N_MASK_SET)) << N_FLAG));
-  SET_BIT(cpu->status_register, (((uint8_t) V) << V_FLAG));
+  SET_OR_CLEAR_BIT(cpu->status_register, ((result & CARRY_MASK_U16) > 0), C_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, ((result & 0xff) == 0), Z_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, ((result & N_MASK_SET) > 0), N_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, V, V_FLAG);
+  return (uint8_t) (result & 0x000000ff);
+}
+
+uint8_t cmp(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
+  uint8_t complement = ((~acc) + 1) & 0xFF;
+  uint16_t result = ((uint16_t) data) + ((uint16_t) complement);
+  SET_OR_CLEAR_BIT(cpu->status_register, (result & CARRY_MASK_U16) > 0,C_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, (result & 0xff) == 0, Z_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, (result & N_MASK_SET) > 0, N_FLAG);
   return (uint8_t) (result & 0x000000ff);
 }
 
 uint8_t and(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
   uint8_t result = data & acc;
-  WRITE(cpu->status_register, 0);
-  SET_BIT(cpu->status_register, (((uint8_t) (result == 0)) << Z_FLAG));
-  SET_BIT(cpu->status_register, (((uint8_t) ((result & N_MASK_SET) == N_MASK_SET)) << N_FLAG));
+  SET_OR_CLEAR_BIT(cpu->status_register, result == 0, Z_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, (result & N_MASK_SET) > 0, N_FLAG);
   return result;
 }
 
 uint8_t asl(struct cpu_internals *cpu, uint8_t data) {
   uint16_t result = ((uint16_t) data) << 1;
-  WRITE(cpu->status_register, 0);
-  SET_BIT(cpu->status_register, (((uint8_t) (result > 0xff)) << Z_FLAG));
+  SET_OR_CLEAR_BIT(cpu->status_register, (result & 0xff) == 0, Z_FLAG);
   return (uint8_t) (result & 0x000000ff);
 }
 

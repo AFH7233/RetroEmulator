@@ -43,6 +43,6 @@ struct cpu_internals {
 
 
 void tick(struct cpu_internals cpu[1], struct device_manager device_manager[1]);
-struct cpu_internals new_cpu();
+struct cpu_internals new_cpu(void);
 
 #endif //RETRO_EMULATOR_LIB_EMBEDDED_SYSTEM_H_

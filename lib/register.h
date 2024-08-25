@@ -31,6 +31,8 @@
 #define Z_MASK_CLEAR 0xFD
 #define C_MASK_CLEAR 0xFE
 
+#define CARRY_MASK_U16 0x100
+
 struct register_u8 {
   uint8_t input;
   uint8_t output;
@@ -45,7 +47,7 @@ struct register_u16 {
 
 #define SET_HIGH(reg, value) (reg).input =  ((reg).input & 0x00FF) | (((uint16_t) value) << 8)
 
-#define SET_LOW(reg, value) (reg).input  = ((reg).input & 0xFF00) | value
+#define SET_LOW(reg, value) (reg).input  = ((reg).input & 0xFF00) | (value)
 
 #define GET_HIGH(reg) (((reg).output & 0xFF00) >> 8)
 
@@ -57,11 +59,19 @@ struct register_u16 {
 
 #define READ(reg) (reg).output
 
-#define WRITE(reg, value) ((reg).input = value)
+#define WRITE(reg, value) ((reg).input = (value))
 
-#define SET_BIT(reg, mask) ((reg).input |= mask)
+#define AND_BIT(reg, mask) ((reg).input &= (mask))
 
-#define CLEAR_BIT(reg, mask) ((reg).input &= mask)
+#define SET_BIT(reg, position) ((reg).input |= (1 << position))
+
+#define CLEAR_BIT(reg, position) ((reg).input &= ~(1 << position))
+
+#define SET_OR_CLEAR_BIT(reg, condition, position) ((reg).input = ((reg).input & ~(1 << (position))) | ((condition) << (position)))
+
+#define OR_BIT(reg, mask) ((reg).input |= (mask))
+
+#define AND_BIT(reg, mask) ((reg).input &= (mask))
 
 
 

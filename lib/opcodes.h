@@ -44,9 +44,16 @@ enum opcode {
   BVS = 0x70,
 
   // Other instructions
-  CLC = 0x18,
   BIT_zeropage = 0x24,
   BIT_absolute = 0x2C,
+
+  // Clear flags
+  CLC = 0x18,
+  CLD = 0xD8,
+  CLI = 0x58,
+  CLV = 0xB8,
+
+
 
   HALT_CODE = 0xFF
 };
