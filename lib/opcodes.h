@@ -71,6 +71,13 @@ enum opcode {
   CPY_zeropage = 0xC4,
   CPY_absolute = 0xCC,
 
+  DEC_zeropage = 0xC6,
+  DEC_zeropage_X = 0xD6,
+  DEC_absolute = 0xCE,
+  DEC_absolute_X = 0xDE,
+
+
+
   HALT_CODE = 0xFF
 };
 
