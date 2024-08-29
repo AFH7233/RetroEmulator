@@ -639,13 +639,11 @@ void cmp_indirect_index_handler(struct cpu_internals *cpu, struct device_manager
 
 void cpx_immediate_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   uint8_t data = read_device(device_manager, READ(cpu->address_register));
-  uint8_t result = cmp(cpu, data, READ(cpu->x_register));
-  WRITE(cpu->accumulator, result);
+  cmp(cpu, data, READ(cpu->x_register));
   prepare_fetch(cpu, device_manager);
 }
 
 void cpx_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
-  // @TODO do not modify accumulator.
   switch (cpu->micro_step) {
     case S0: {
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
@@ -656,8 +654,8 @@ void cpx_zeropage_handler(struct cpu_internals *cpu, struct device_manager *devi
     }
     case S1: {
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
-      uint8_t result = cmp(cpu, data, READ(cpu->x_register));
-      WRITE(cpu->accumulator, result);
+      cmp(cpu, data, READ(cpu->x_register));
+      prepare_fetch(cpu, device_manager);
       return;
     }
     default: fprintf(stderr, "Wrong cpx_zeropage_handler step!!!!");
@@ -683,8 +681,8 @@ void cpx_absolute_handler(struct cpu_internals *cpu, struct device_manager *devi
     }
     case S2: {
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
-      uint8_t result = cmp(cpu, data, READ(cpu->x_register));
-      WRITE(cpu->accumulator, result);
+      cmp(cpu, data, READ(cpu->x_register));
+      prepare_fetch(cpu, device_manager);
       return;
     }
     default: fprintf(stderr, "Wrong cpx_absolute_handler step!!!!");
@@ -693,8 +691,7 @@ void cpx_absolute_handler(struct cpu_internals *cpu, struct device_manager *devi
 
 void cpy_immediate_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   uint8_t data = read_device(device_manager, READ(cpu->address_register));
-  uint8_t result = cmp(cpu, data, READ(cpu->x_register));
-  WRITE(cpu->accumulator, result);
+  cmp(cpu, data, READ(cpu->x_register));
   prepare_fetch(cpu, device_manager);
 }
 
@@ -709,8 +706,8 @@ void cpy_zeropage_handler(struct cpu_internals *cpu, struct device_manager *devi
     }
     case S1: {
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
-      uint8_t result = cmp(cpu, data, READ(cpu->x_register));
-      WRITE(cpu->accumulator, result);
+      cmp(cpu, data, READ(cpu->x_register));
+      prepare_fetch(cpu, device_manager);
       return;
     }
     default: fprintf(stderr, "Wrong cpy_zeropage_handler step!!!!");
@@ -736,8 +733,8 @@ void cpy_absolute_handler(struct cpu_internals *cpu, struct device_manager *devi
     }
     case S2: {
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
-      uint8_t result = cmp(cpu, data, READ(cpu->x_register));
-      WRITE(cpu->accumulator, result);
+      cmp(cpu, data, READ(cpu->x_register));
+      prepare_fetch(cpu, device_manager);
       return;
     }
     default: fprintf(stderr, "Wrong cpy_absolute_handler step!!!!");
