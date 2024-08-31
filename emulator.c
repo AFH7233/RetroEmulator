@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   };
 
   add_device(&device_manager, memory.start, memory.end, memory_bus);
-  
+
   //Write test values
   write_device(&device_manager, 0xfffc, 0x00);
   write_device(&device_manager, 0xfffd, 0x10);
@@ -42,9 +42,10 @@ int main(int argc, char *argv[]) {
   struct cpu_internals cpu = new_cpu();
   // run processor
   int index = 0;
-  while(index < 7){
+  while (index < 10) {
     tick(&cpu, &device_manager);
     index++;
   }
+  printf("%X\n", cpu.stack_pointer.output);
   return 0;
 }

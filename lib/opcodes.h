@@ -76,7 +76,45 @@ enum opcode {
   DEC_absolute = 0xCE,
   DEC_absolute_X = 0xDE,
 
+  DEX_implied = 0xCA,
+  DEY_implied = 0x88,
 
+  EOR_immediate = 0x49,
+  EOR_zeropage = 0x45,
+  EOR_zeropage_X = 0x55,
+  EOR_absolute = 0x4D,
+  EOR_absolute_X = 0x5D,
+  EOR_absolute_Y = 0x59,
+  EOR_indirect_index = 0x41,
+  EOR_index_indirect = 0x51,
+
+  INC_zeropage = 0xE6,
+  INC_zeropage_X = 0xF6,
+  INC_absolute = 0xEE,
+  INC_absolute_X = 0xFE,
+
+  INX_implied = 0xE8,
+  INY_implied = 0xC8,
+
+  JMP_absolute = 0x4C,
+  JMP_indirect = 0x6C,
+
+  JSR_absolute = 0x20,
+
+  LDA_immediate = 0xA9,
+  LDA_zeropage = 0xA5,
+  LDA_zeropage_X = 0xB5,
+  LDA_absolute = 0xAD,
+  LDA_absolute_X = 0xBD,
+  LDA_absolute_Y = 0xB9,
+  LDA_indirect_index = 0xA1,
+  LDA_index_indirect = 0xB1,
+
+  LDX_immediate = 0xA2,
+  LDX_zeropage = 0xA6,
+  LDX_zeropage_Y = 0xB6,
+  LDX_absolute = 0xAE,
+  LDX_absolute_Y = 0xBE,
 
   HALT_CODE = 0xFF
 };
