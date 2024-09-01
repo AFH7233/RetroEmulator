@@ -156,7 +156,30 @@ enum opcode {
   ROR_absolute = 0x6E,
   ROR_absolute_X = 0x7E,
 
-  HALT_CODE = 0xFF
+  RTS = 0x60,
+
+  SBC_immediate = 0xE9,
+  SBC_zeropage = 0xE5,
+  SBC_zeropage_X = 0xF5,
+  SBC_absolute = 0xED,
+  SBC_absolute_X = 0xFD,
+  SBC_absolute_Y = 0xF9,
+  SBC_indirect_index = 0xE1,
+  SBC_index_indirect = 0xF1,
+
+  SEC = 0x38,
+  SED = 0xF8,
+  SEI = 0x78,
+
+  STA_zeropage = 0x85,
+  STA_zeropage_X = 0x95,
+  STA_absolute = 0x8D,
+  STA_absolute_X = 0x9D,
+  STA_absolute_Y = 0x99,
+  STA_indirect_index = 0x81,
+  STA_index_indirect = 0x91,
+
+  STOP = 0xFF
 };
 
 #endif //RETRO_EMULATOR_LIB_OPCODES_H_

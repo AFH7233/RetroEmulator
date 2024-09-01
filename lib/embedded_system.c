@@ -192,10 +192,34 @@ static void ror_zeropage_x_handler(struct cpu_internals *cpu, struct device_mana
 static void ror_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
 static void ror_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
 
+static void rts_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+
+static void sbc_immediate_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sbc_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sbc_zeropage_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sbc_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sbc_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sbc_absolute_y_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sbc_index_indirect_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sbc_indirect_index_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+
+static void sec_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sed_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sei_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+
+static void sta_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sta_zeropage_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sta_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sta_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sta_absolute_y_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sta_index_indirect_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+static void sta_indirect_index_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
+
 static void branch_handler(struct cpu_internals *cpu, struct device_manager *device_manager);
 
 static uint16_t add_address(uint8_t data, uint8_t acc);
 static uint8_t adc(struct cpu_internals *cpu, uint8_t data, uint8_t acc);
+static uint8_t sbc(struct cpu_internals *cpu, uint8_t data, uint8_t acc);
 static uint8_t and(struct cpu_internals *cpu, uint8_t data, uint8_t acc);
 static uint8_t eor(struct cpu_internals *cpu, uint8_t data, uint8_t acc);
 static uint8_t ora(struct cpu_internals *cpu, uint8_t data, uint8_t acc);
@@ -356,8 +380,201 @@ static generic_handler opcode_handlers[256] = {
     [ROR_zeropage_X] = ror_zeropage_x_handler,
     [ROR_absolute] = ror_absolute_handler,
     [ROR_absolute_X] = ror_absolute_x_handler,
+    [RTS] = rts_handler,
 
-    [HALT_CODE] = halt,
+    [SBC_immediate] = sbc_immediate_handler,
+    [SBC_zeropage] = sbc_zeropage_handler,
+    [SBC_zeropage_X] = sbc_zeropage_x_handler,
+    [SBC_absolute] = sbc_absolute_handler,
+    [SBC_absolute_X] = sbc_absolute_x_handler,
+    [SBC_absolute_Y] = sbc_absolute_y_handler,
+    [SBC_index_indirect] = sbc_index_indirect_handler,
+    [SBC_indirect_index] = sbc_indirect_index_handler,
+
+    [SEC] = sec_handler,
+    [SED] = sed_handler,
+    [SEI] = sei_handler,
+
+    [STA_zeropage] = sta_zeropage_handler,
+    [STA_zeropage_X] = sta_zeropage_x_handler,
+    [STA_absolute] = sta_absolute_handler,
+    [STA_absolute_X] = sta_absolute_x_handler,
+    [STA_absolute_Y] = sta_absolute_y_handler,
+    [STA_index_indirect] = sta_index_indirect_handler,
+    [STA_indirect_index] = sta_indirect_index_handler,
+
+
+    [STOP] = halt,
+};
+
+static char* to_str[256] = {
+    [ADC_immediate] = "ADC_immediate",
+    [ADC_zeropage] = "ADC_zeropage",
+    [ADC_zeropage_X] = "ADC_zeropage_X",
+    [ADC_absolute] = "ADC_absolute",
+    [ADC_absolute_X] = "ADC_absolute_X",
+    [ADC_absolute_Y] = "ADC_absolute_Y",
+    [ADC_index_indirect] = "ADC_index_indirect",
+    [ADC_indirect_index] = "ADC_indirect_index",
+
+    [AND_immediate] = "AND_immediate",
+    [AND_zeropage] = "AND_zeropage",
+    [AND_zeropage_X] = "AND_zeropage_X",
+    [AND_absolute] = "AND_absolute",
+    [AND_absolute_X] = "AND_absolute_X",
+    [AND_absolute_Y] = "AND_absolute_Y",
+    [AND_index_indirect] = "AND_index_indirect",
+    [AND_indirect_index] = "AND_indirect_index",
+
+    [ASL_accumulator] = "ASL_accumulator",
+    [ASL_zeropage] = "ASL_zeropage",
+    [ASL_zeropage_X] = "ASL_zeropage_X",
+    [ASL_absolute] = "ASL_absolute",
+    [ASL_absolute_X] = "ASL_absolute_X",
+
+    [BCC] = "BCC",
+    [BCS] = "BCS",
+    [BEQ] = "BEQ",
+    [BNE] = "BNE",
+    [BMI] = "BMI",
+    [BPL] = "BPL",
+    [BVC] = "BVC",
+    [BVS] = "BVS",
+
+    [BIT_zeropage] = "BIT_zeropage",
+    [BIT_absolute] = "BIT_absolute",
+
+    [CLC] = "CLC",
+    [CLD] = "CLD",
+    [CLI] = "CLI",
+    [CLV] = "CLV",
+
+    [CMP_immediate] = "CMP_immediate",
+    [CMP_zeropage] = "CMP_zeropage",
+    [CMP_zeropage_X] = "CMP_zeropage_X",
+    [CMP_absolute] = "CMP_absolute",
+    [CMP_absolute_X] = "CMP_absolute_X",
+    [CMP_absolute_Y] = "CMP_absolute_Y",
+    [CMP_index_indirect] = "CMP_index_indirect",
+    [CMP_indirect_index] = "CMP_indirect_index",
+
+    [CPX_immediate] = "CPX_immediate",
+    [CPX_zeropage] = "CPX_zeropage",
+    [CPX_absolute] = "CPX_absolute",
+
+    [CPY_immediate] = "CPY_immediate",
+    [CPY_zeropage] = "CPY_zeropage",
+    [CPY_absolute] = "CPY_absolute",
+
+    [DEC_zeropage] = "DEC_zeropage",
+    [DEC_zeropage_X] = "DEC_zeropage_X",
+    [DEC_absolute] = "DEC_absolute",
+    [DEC_absolute_X] = "DEC_absolute_X",
+
+    [DEX_implied] = "DEX_implied",
+    [DEY_implied] = "DEY_implied",
+
+    [EOR_immediate] = "EOR_immediate",
+    [EOR_zeropage] = "EOR_zeropage",
+    [EOR_zeropage_X] = "EOR_zeropage_X",
+    [EOR_absolute] = "EOR_absolute",
+    [EOR_absolute_X] = "EOR_absolute_X",
+    [EOR_absolute_Y] = "EOR_absolute_Y",
+    [EOR_index_indirect] = "EOR_index_indirect",
+    [EOR_indirect_index] = "EOR_indirect_index",
+
+    [INC_zeropage] = "INC_zeropage",
+    [INC_zeropage_X] = "INC_zeropage_X",
+    [INC_absolute] = "INC_absolute",
+    [INC_absolute_X] = "INC_absolute_X",
+
+    [INX_implied] = "INX_implied",
+    [INY_implied] = "INY_implied",
+
+    [JMP_absolute] = "JMP_absolute",
+    [JMP_indirect] = "JMP_indirect",
+
+    [JSR_absolute] = "JSR_absolute",
+
+    [LDA_immediate] = "LDA_immediate",
+    [LDA_zeropage] = "LDA_zeropage",
+    [LDA_zeropage_X] = "LDA_zeropage_X",
+    [LDA_absolute] = "LDA_absolute",
+    [LDA_absolute_X] = "LDA_absolute_X",
+    [LDA_absolute_Y] = "LDA_absolute_Y",
+    [LDA_index_indirect] = "LDA_index_indirect",
+    [LDA_indirect_index] = "LDA_indirect_index",
+
+    [LDX_immediate] = "LDX_immediate",
+    [LDX_zeropage] = "LDX_zeropage",
+    [LDX_zeropage_Y] = "LDX_zeropage_Y",
+    [LDX_absolute] = "LDX_absolute",
+    [LDX_absolute_Y] = "LDX_absolute_Y",
+
+    [LDY_immediate] = "LDY_immediate",
+    [LDY_zeropage] = "LDY_zeropage",
+    [LDY_zeropage_X] = "LDY_zeropage_X",
+    [LDY_absolute] = "LDY_absolute",
+    [LDY_absolute_X] = "LDY_absolute_X",
+
+    [LSR_accumulator] = "LSR_accumulator",
+    [LSR_zeropage] = "LSR_zeropage",
+    [LSR_zeropage_X] = "LSR_zeropage_X",
+    [LSR_absolute] = "LSR_absolute",
+    [LSR_absolute_X] = "LSR_absolute_X",
+
+    [ORA_immediate] = "ORA_immediate",
+    [ORA_zeropage] = "ORA_zeropage",
+    [ORA_zeropage_X] = "ORA_zeropage_X",
+    [ORA_absolute] = "ORA_absolute",
+    [ORA_absolute_X] = "ORA_absolute_X",
+    [ORA_absolute_Y] = "ORA_absolute_Y",
+    [ORA_index_indirect] = "ORA_index_indirect",
+    [ORA_indirect_index] = "ORA_indirect_index",
+
+    [NOP] = "NOP",
+
+    [PHA] = "PHA",
+    [PHP] = "PHP",
+    [PLA] = "PLA",
+    [PLP] = "PLP",
+
+    [ROL_accumulator] = "ROL_accumulator",
+    [ROL_zeropage] = "ROL_zeropage",
+    [ROL_zeropage_X] = "ROL_zeropage_X",
+    [ROL_absolute] = "ROL_absolute",
+    [ROL_absolute_X] = "ROL_absolute_X",
+
+    [ROR_accumulator] = "ROR_accumulator",
+    [ROR_zeropage] = "ROR_zeropage",
+    [ROR_zeropage_X] = "ROR_zeropage_X",
+    [ROR_absolute] = "ROR_absolute",
+    [ROR_absolute_X] = "ROR_absolute_X",
+
+    [RTS] = "RTS",
+
+    [SBC_immediate] = "SBC_immediate",
+    [SBC_zeropage] = "SBC_zeropage",
+    [SBC_zeropage_X] = "SBC_zeropage_X",
+    [SBC_absolute] = "SBC_absolute",
+    [SBC_absolute_X] = "SBC_absolute_X",
+    [SBC_absolute_Y] = "SBC_absolute_Y",
+    [SBC_index_indirect] = "SBC_index_indirect",
+    [SBC_indirect_index] = "SBC_indirect_index",
+
+    [SEC] = "SEC",
+    [SED] = "SED",
+    [SEI] = "SEI",
+
+    [STA_zeropage] = "STA_zeropage",
+    [STA_zeropage_X] = "STA_zeropage_X",
+    [STA_absolute] = "STA_absolute",
+    [STA_absolute_X] = "STA_absolute_X",
+    [STA_absolute_Y] = "STA_absolute_Y",
+    [STA_index_indirect] = "STA_index_indirect",
+    [STA_indirect_index] = "STA_indirect_index",
+
+    [STOP] = "STOP",
 };
 
 static generic_handler cpu_state_handlers[5] = {
@@ -407,13 +624,13 @@ void tick(struct cpu_internals cpu[1], struct device_manager device_manager[1]) 
                    "  Y:0x%02X\t"
                    "  Status:0x%02X\t"
                    "  SP:0x%02X\t"
-                   "  IR:0x%02X\t"
+                   "  IR:%s\t"
                    "  PC:0x%04X\t"
                    "  Add:0x%04X\t"
                    "  DR:0x%02X\t"
                    "  Temp:0x%02X\n" RESET_COLOR,
       cpu->accumulator.output, cpu->x_register.output, cpu->y_register.output,
-      cpu->stack_pointer.output, cpu->status_register.output, cpu->instruction_register.output,
+      cpu->stack_pointer.output, cpu->status_register.output, to_str[cpu->instruction_register.output],
       cpu->program_counter.output, cpu->address_register.output, cpu->data_register.output,
       cpu->temp_register.output);
 
@@ -423,6 +640,10 @@ void tick(struct cpu_internals cpu[1], struct device_manager device_manager[1]) 
 
 void execute(struct cpu_internals *cpu, struct device_manager *device_manager) {
   generic_handler instruction = opcode_handlers[READ(cpu->instruction_register)];
+  if(instruction == NULL){
+    fprintf(stderr, "Not implemented\n");
+    return;
+  }
   instruction(cpu, device_manager);
 }
 
@@ -1085,19 +1306,21 @@ void jsr_absolute_handler(struct cpu_internals *cpu, struct device_manager *devi
       SET_HIGH(cpu->address_register, 0x01);
       SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
       DECREMENT(cpu->stack_pointer);
+      WRITE(cpu->data_register, GET_LOW(cpu->program_counter));
       return;
     }
     case S2: {
       cpu->micro_step = S3;
-      write_device(device_manager, READ(cpu->address_register), GET_LOW(cpu->program_counter));
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
       SET_HIGH(cpu->address_register, 0x01);
       SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
       DECREMENT(cpu->stack_pointer);
+      WRITE(cpu->data_register, GET_HIGH(cpu->program_counter));
       return;
     }
     case S3: {
       cpu->micro_step = S4;
-      write_device(device_manager, READ(cpu->address_register), GET_HIGH(cpu->program_counter));
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
       WRITE(cpu->address_register, READ(cpu->program_counter));
       return;
     }
@@ -1439,10 +1662,11 @@ void pha_handler(struct cpu_internals *cpu, struct device_manager *device_manage
       SET_HIGH(cpu->address_register, 0x01);
       SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
       DECREMENT(cpu->stack_pointer);
+      WRITE(cpu->data_register, READ(cpu->accumulator));
       return;
     }
     case S1: {
-      write_device(device_manager, READ(cpu->address_register), READ(cpu->accumulator));
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
       prepare_fetch(cpu, device_manager);
       return;
     }
@@ -1458,12 +1682,13 @@ void php_handler(struct cpu_internals *cpu, struct device_manager *device_manage
       SET_HIGH(cpu->address_register, 0x01);
       SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
       DECREMENT(cpu->stack_pointer);
+      uint8_t data = READ(cpu->status_register);
+      data |= B_MASK_SET;
+      WRITE(cpu->data_register, data);
       return;
     }
     case S1: {
-      uint8_t data = READ(cpu->status_register);
-      data |= B_MASK_SET;
-      write_device(device_manager, READ(cpu->address_register), data);
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
       prepare_fetch(cpu, device_manager);
       return;
     }
@@ -1507,12 +1732,14 @@ void plp_handler(struct cpu_internals *cpu, struct device_manager *device_manage
       cpu->micro_step = S2;
       SET_HIGH(cpu->address_register, 0x01);
       SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
+      uint8_t data = READ(cpu->status_register);
+      data |= B_MASK_SET;
+      WRITE(cpu->data_register, data);
       return;
     }
     case S2: {
-      uint8_t data = READ(cpu->status_register);
-      data |= B_MASK_SET;
-      write_device(device_manager, READ(cpu->address_register), data);
+
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
       prepare_fetch(cpu, device_manager);
       return;
     }
@@ -1590,17 +1817,288 @@ void rts_handler(struct cpu_internals *cpu, struct device_manager *device_manage
     case S3: {
       cpu->micro_step = S4;
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
-      SET_LOW(cpu->program_counter, READ(cpu->temp_register));
-      SET_HIGH(cpu->program_counter, data);
+      SET_HIGH(cpu->program_counter, READ(cpu->temp_register));
+      SET_LOW(cpu->program_counter, data);
       INCREMENT(cpu->program_counter);
       return;
     }
     case S4: {
-      cpu->state = FETCH;
-      WRITE(cpu->address_register, READ(cpu->program_counter));
+      prepare_fetch(cpu, device_manager);
       return;
     }
-    default: fprintf(stderr, "Wrong!!!!");
+    default: fprintf(stderr, "Wrong rts_handler step!!!!");
+  }
+}
+
+void sbc_immediate_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  immediate_read(cpu, device_manager, sbc);
+}
+
+void sbc_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  zeropage_read(cpu, device_manager, sbc);
+}
+
+void sbc_zeropage_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  zeropage_x_read(cpu, device_manager, sbc);
+}
+
+void sbc_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  absolute_read(cpu, device_manager, sbc);
+}
+
+void sbc_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  absolute_x_read(cpu, device_manager, sbc);
+}
+
+void sbc_absolute_y_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  absolute_y_read(cpu, device_manager, sbc);
+}
+
+void sbc_index_indirect_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  index_indirect_read(cpu, device_manager, sbc);
+}
+
+void sbc_indirect_index_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  indirect_index_read(cpu, device_manager, sbc);
+}
+
+void sec_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  SET_BIT(cpu->status_register, C_FLAG);
+  prepare_fetch(cpu, device_manager);
+}
+
+void sed_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  SET_BIT(cpu->status_register, D_FLAG);
+  prepare_fetch(cpu, device_manager);
+}
+
+void sei_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  SET_BIT(cpu->status_register, I_FLAG);
+  prepare_fetch(cpu, device_manager);
+}
+
+void sta_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      WRITE(cpu->data_register, READ(cpu->accumulator));
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong zeropage step!!!!");
+  }
+}
+
+void sta_zeropage_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      WRITE(cpu->data_register, READ(cpu->accumulator));
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint16_t result = add_address(READ(cpu->x_register), READ(cpu->address_register));
+      SET_LOW(cpu->address_register, (result & 0x000000ff));
+      cpu->micro_step = S2;
+    }
+    case S2: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      prepare_fetch(cpu, device_manager);
+    }
+    default: fprintf(stderr, "Wrong zeropage X step!!!!");
+  }
+}
+
+void sta_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      WRITE(cpu->temp_register, data);
+      INCREMENT(cpu->program_counter);
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, READ(cpu->temp_register));
+      SET_HIGH(cpu->address_register, data);
+      WRITE(cpu->data_register, READ(cpu->accumulator));
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong absolute step!!!!");
+  }
+}
+
+void sta_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) { // Not sure why alwas take 5
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      WRITE(cpu->temp_register, data);
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      INCREMENT(cpu->program_counter);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint16_t result = add_address(READ(cpu->temp_register), READ(cpu->x_register));
+      SET_LOW(cpu->address_register, (result & 0x00ff));
+      SET_HIGH(cpu->address_register, data);
+      INCREMENT(cpu->program_counter);
+      uint8_t carry = (result & CARRY_MASK_U16) > 0;
+      WRITE(cpu->temp_register, carry); // this is really far-fetched
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      uint16_t result = add_address(GET_HIGH(cpu->address_register), READ(cpu->temp_register));
+      SET_HIGH(cpu->address_register, (result & 0x000000ff));
+      WRITE(cpu->data_register, READ(cpu->accumulator));
+      cpu->micro_step = S3;
+      return;
+    }
+    case S3: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong absolute x step!!!!");
+  }
+}
+
+void sta_absolute_y_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      WRITE(cpu->temp_register, data);
+      WRITE(cpu->address_register, READ(cpu->program_counter));
+      INCREMENT(cpu->program_counter);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint16_t result = add_address(READ(cpu->temp_register), READ(cpu->y_register));
+      SET_LOW(cpu->address_register, (result & 0x00ff));
+      SET_HIGH(cpu->address_register, data);
+      INCREMENT(cpu->program_counter);
+      uint8_t carry = (result & CARRY_MASK_U16) > 0;
+      WRITE(cpu->temp_register, carry); // this is really far-fetched
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      uint16_t result = add_address(GET_HIGH(cpu->address_register), READ(cpu->temp_register));
+      SET_HIGH(cpu->address_register, (result & 0x000000ff));
+      WRITE(cpu->data_register, READ(cpu->accumulator));
+      cpu->micro_step = S3;
+      return;
+    }
+    case S3: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong absolute x step!!!!");
+  }
+}
+
+void sta_index_indirect_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint16_t result = add_address(GET_LOW(cpu->address_register), READ(cpu->x_register));
+      SET_LOW(cpu->address_register, (result & 0x000000ff));
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint16_t result = add_address(GET_LOW(cpu->address_register), 1);
+      SET_LOW(cpu->address_register, (result & 0x000000ff));
+      WRITE(cpu->temp_register, data);
+      cpu->micro_step = S3;
+      return;
+    }
+    case S3: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, READ(cpu->temp_register));
+      SET_HIGH(cpu->address_register, data);
+      WRITE(cpu->data_register, READ(cpu->accumulator));
+      cpu->micro_step = S4;
+      return;
+    }
+    case S4: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong index indirect step!!!!");
+  }
+}
+
+void sta_indirect_index_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
+  switch (cpu->micro_step) {
+    case S0: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      SET_LOW(cpu->address_register, data);
+      SET_HIGH(cpu->address_register, 0x00);
+      cpu->micro_step = S1;
+      return;
+    }
+    case S1: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint16_t result = add_address(GET_LOW(cpu->address_register), 1);
+      SET_LOW(cpu->address_register, (result & 0x00ff));
+      WRITE(cpu->temp_register, data);
+      cpu->micro_step = S2;
+      return;
+    }
+    case S2: {
+      uint8_t data = read_device(device_manager, READ(cpu->address_register));
+      uint16_t result = add_address(READ(cpu->temp_register), READ(cpu->y_register));
+      SET_LOW(cpu->address_register, (result & 0x000000ff));
+      SET_HIGH(cpu->address_register, data);
+      uint8_t carry = (result & CARRY_MASK_U16) > 0;
+      WRITE(cpu->temp_register, carry);
+      cpu->micro_step = S3;
+      return;
+    }
+    case S3: {
+      uint16_t result = add_address(GET_HIGH(cpu->address_register), READ(cpu->temp_register));
+      SET_HIGH(cpu->address_register, (result & 0x000000ff));
+      cpu->micro_step = S4;
+      return;
+    }
+    case S4: {
+      write_device(device_manager, READ(cpu->address_register), READ(cpu->data_register));
+      prepare_fetch(cpu, device_manager);
+      return;
+    }
+    default: fprintf(stderr, "Wrong indirect index step!!!!");
   }
 }
 
@@ -2079,6 +2577,20 @@ uint8_t adc(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
   SET_OR_CLEAR_BIT(cpu->status_register, V, V_FLAG);
   return (uint8_t) (result & 0x000000ff);
 }
+
+uint8_t sbc(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
+  uint16_t carry = (READ(cpu->status_register) & C_MASK_SET);
+  uint16_t result = ((uint16_t) data) - ((uint16_t) acc) - (!carry);
+  bool bothNegative = ((data & N_MASK_SET) == N_MASK_SET) && ((acc & N_MASK_SET) == N_MASK_SET);
+  bool bothPositive = ((data & N_MASK_SET) == 0) && ((acc & N_MASK_SET) == 0);
+  bool V = (bothNegative && ((data & N_MASK_SET) == 0)) || (bothPositive && ((data & N_MASK_SET) == N_MASK_SET));
+  SET_OR_CLEAR_BIT(cpu->status_register, ((result & CARRY_MASK_U16) > 0), C_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, ((result & 0xff) == 0), Z_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, ((result & N_MASK_SET) > 0), N_FLAG);
+  SET_OR_CLEAR_BIT(cpu->status_register, V, V_FLAG);
+  return (uint8_t) (result & 0x000000ff);
+}
+
 
 uint8_t cmp(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
   uint8_t complement = (~acc) + 1;
