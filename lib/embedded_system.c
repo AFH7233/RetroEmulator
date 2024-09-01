@@ -992,22 +992,22 @@ void bit_absolute_handler(struct cpu_internals *cpu, struct device_manager *devi
 
 void clc_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   CLEAR_BIT(cpu->status_register, C_FLAG);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void cld_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   CLEAR_BIT(cpu->status_register, D_FLAG);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void cli_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   CLEAR_BIT(cpu->status_register, I_FLAG);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void clv_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   CLEAR_BIT(cpu->status_register, V_FLAG);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void cmp_immediate_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
@@ -1164,12 +1164,12 @@ void dec_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *de
 
 void dec_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   DECREMENT(cpu->x_register);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void dec_y_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   DECREMENT(cpu->y_register);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void eor_immediate_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
@@ -1222,12 +1222,12 @@ void inc_absolute_x_handler(struct cpu_internals *cpu, struct device_manager *de
 
 void inc_x_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   INCREMENT(cpu->x_register);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void inc_y_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   INCREMENT(cpu->y_register);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void jmp_absolute_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
@@ -1864,17 +1864,17 @@ void sbc_indirect_index_handler(struct cpu_internals *cpu, struct device_manager
 
 void sec_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   SET_BIT(cpu->status_register, C_FLAG);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void sed_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   SET_BIT(cpu->status_register, D_FLAG);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void sei_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   SET_BIT(cpu->status_register, I_FLAG);
-  prepare_fetch(cpu, device_manager);
+  cpu->state = FETCH;
 }
 
 void sta_zeropage_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
@@ -2127,7 +2127,7 @@ void branch_handler(struct cpu_internals *cpu, struct device_manager *device_man
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
       uint16_t result = add_address(GET_LOW(cpu->program_counter), data);
       SET_LOW(cpu->program_counter, (result & 0x000000ff));
-      cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S4 : S5;
+      cpu->micro_step = !((result & CARRY_MASK_U16) > 0) ? S4 : S5;
       return;
     }
     case S4: {

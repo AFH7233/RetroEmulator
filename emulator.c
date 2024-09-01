@@ -28,14 +28,19 @@ int main(int argc, char *argv[]) {
   write_device(&device_manager, 0x5002, RTS);
   write_device(&device_manager, 0x1003, STA_zeropage);
   write_device(&device_manager, 0x1004, 0x50);
-  write_device(&device_manager, 0x1005, STOP);
+  write_device(&device_manager, 0x1005, DEX_implied);
+  write_device(&device_manager, 0x1006, CPX_immediate);
+  write_device(&device_manager, 0x1007, 0xEF);
+  write_device(&device_manager, 0x1008, BNE);
+  write_device(&device_manager, 0x1009, 0xFB);
+  write_device(&device_manager, 0x100A, STOP);
 
 
 
   struct cpu_internals cpu = new_cpu();
   // run processor
   int index = 0;
-  while (index < 40) {
+  while (index < 200) {
     tick(&cpu, &device_manager);
     index++;
   }
