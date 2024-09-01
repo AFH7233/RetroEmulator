@@ -7,6 +7,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include "log.h"
 
 struct bus_device {
   void* hardware;
@@ -18,6 +20,7 @@ struct device_manager {
   struct bus_device devices[0x0FFFF];
 };
 
+struct device_manager new_device_manager(void);
 uint8_t read_device(struct device_manager* manager, uint16_t address);
 void write_device(struct device_manager* manager, uint16_t address, uint8_t value);
 void add_device(struct device_manager* manager, uint16_t start, uint16_t end, struct bus_device device);

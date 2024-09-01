@@ -6,6 +6,7 @@
 #define RETRO_EMULATOR_LIB_EMBEDDED_SYSTEM_H_
 #include "register.h"
 #include "device_manager.h"
+#include "log.h"
 
 enum cpu_state {
   RESET = 0,

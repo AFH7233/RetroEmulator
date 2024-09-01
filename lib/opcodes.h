@@ -116,6 +116,46 @@ enum opcode {
   LDX_absolute = 0xAE,
   LDX_absolute_Y = 0xBE,
 
+  LDY_immediate = 0xA0,
+  LDY_zeropage = 0xA4,
+  LDY_zeropage_X = 0xB4,
+  LDY_absolute = 0xAC,
+  LDY_absolute_X = 0xBC,
+
+  LSR_accumulator = 0x4A,
+  LSR_zeropage = 0x46,
+  LSR_zeropage_X = 0x56,
+  LSR_absolute = 0x4E,
+  LSR_absolute_X = 0x5E,
+
+  ORA_immediate = 0x09,
+  ORA_zeropage = 0x05,
+  ORA_zeropage_X = 0x15,
+  ORA_absolute = 0x0D,
+  ORA_absolute_X = 0x1D,
+  ORA_absolute_Y = 0x19,
+  ORA_indirect_index = 0x01,
+  ORA_index_indirect = 0x11,
+
+  NOP = 0xEA,
+
+  PHA = 0x48,
+  PHP = 0x08,
+  PLA = 0x68,
+  PLP = 0x28,
+
+  ROL_accumulator = 0x2A,
+  ROL_zeropage = 0x26,
+  ROL_zeropage_X = 0x36,
+  ROL_absolute = 0x2E,
+  ROL_absolute_X = 0x3E,
+
+  ROR_accumulator = 0x6A,
+  ROR_zeropage = 0x66,
+  ROR_zeropage_X = 0x76,
+  ROR_absolute = 0x6E,
+  ROR_absolute_X = 0x7E,
+
   HALT_CODE = 0xFF
 };
 

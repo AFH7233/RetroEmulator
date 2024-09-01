@@ -5,14 +5,18 @@
 #ifndef RETRO_EMULATOR_LIB_MEMORY_H_
 #define RETRO_EMULATOR_LIB_MEMORY_H_
 
-#include <stdint.h>
+#include "device_manager.h"
+#include <stdlib.h>
 
 struct memory {
   uint16_t start;
   uint16_t end;
-  uint8_t slots[0xFFFF]; // Allways 256 even though some memory wont be used
+  uint8_t slots[0xFFFF];
 };
 // this should have a clock method for write
+
+struct memory new_memory(void);
+struct bus_device new_memory_bus(struct memory* memory);
 uint8_t read_memory (struct memory*, uint16_t);
 void write_memory (struct memory*, uint16_t, uint8_t);
 
