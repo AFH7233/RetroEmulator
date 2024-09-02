@@ -16,8 +16,8 @@ struct memory {
 // this should have a clock method for write
 
 struct memory new_memory(uint16_t start, uint16_t end);
-struct bus_device new_memory_bus(struct memory* memory);
-uint8_t read_memory (struct memory*, uint16_t);
-void write_memory (struct memory*, uint16_t, uint8_t);
+struct bus_device new_memory_bus(struct memory memory[static 1]);
+uint8_t read_memory (struct memory memory[static 1], uint16_t address);
+void write_memory (struct memory memory[static 1], uint16_t address, uint8_t data);
 
 #endif //RETRO_EMULATOR_LIB_MEMORY_H_
