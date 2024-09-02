@@ -3,12 +3,12 @@
 //
 #include "memory.h"
 
-struct memory new_memory(void){
+struct memory new_memory(uint16_t start, uint16_t end){
   struct memory memory = {
-      .start = 0x0000,
-      .end = 0xffff
+      .start = start,
+      .end = end
   };
-  for (size_t i = 0; i < 0xFFFF; i++) {
+  for (size_t i = start; i <= end; i++) {
     memory.slots[i] = 0;
   }
   return memory;

@@ -17,13 +17,13 @@ struct bus_device {
 };
 
 struct device_manager {
-  struct bus_device devices[0x0FFFF];
+  struct bus_device* devices[0x10000];
 };
 
 struct device_manager new_device_manager(void);
 uint8_t read_device(struct device_manager* manager, uint16_t address);
 void write_device(struct device_manager* manager, uint16_t address, uint8_t value);
-void add_device(struct device_manager* manager, uint16_t start, uint16_t end, struct bus_device device);
+void add_device(struct device_manager* manager, uint16_t start, uint16_t end, struct bus_device device[1]);
 
 
 #endif //RETRO_EMULATOR_LIB_DEVICE_MANAGER_H_

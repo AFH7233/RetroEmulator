@@ -20,10 +20,12 @@
 #define LOG_SEPARATOR printf(BOLD_TEXT"%s"RESET_COLOR,"------------------------------------------------------------------------------------------------------------------------------------\n")
 #define LOG(...) printf(__VA_ARGS__)
 #define ERROR_LOG(...) fprintf(stderr, COLOR_RED "[ERROR] " __VA_ARGS__ RESET_COLOR)
+#define LOG_MEMORY(start, end, arr)  for(uint16_t i=start; i< end; i++) printf("[MEM] address:0x%04X\tvalue:0x%02X\n", i, arr[i])
 #else
 #define LOG_SEPARATOR
 #define LOG(...)
 #define ERROR_LOG(...)
+#define LOG_MEMORY(start, end, arr)
 #endif
 
 #endif //RETRO_EMULATOR_LIB_LOG_H_

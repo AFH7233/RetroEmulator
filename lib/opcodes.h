@@ -40,6 +40,7 @@ enum opcode {
   BMI = 0x30,
   BNE = 0xD0,
   BPL = 0x10,
+  BRK = 0x00,
   BVC = 0x50,
   BVS = 0x70,
 
@@ -156,6 +157,7 @@ enum opcode {
   ROR_absolute = 0x6E,
   ROR_absolute_X = 0x7E,
 
+  RTI = 0x40,
   RTS = 0x60,
 
   SBC_immediate = 0xE9,
@@ -178,6 +180,21 @@ enum opcode {
   STA_absolute_Y = 0x99,
   STA_indirect_index = 0x81,
   STA_index_indirect = 0x91,
+
+  STX_zeropage = 0x86,
+  STX_zeropage_Y = 0x96,
+  STX_absolute = 0x8E,
+
+  STY_zeropage = 0x84,
+  STY_zeropage_X = 0x94,
+  STY_absolute = 0x8C,
+
+  TAX = 0xAA,
+  TAY = 0xA8,
+  TSX = 0xBA,
+  TXA = 0x8A,
+  TXS = 0x9A,
+  TYA = 0x98,
 
   STOP = 0xFF
 };
