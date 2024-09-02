@@ -707,9 +707,7 @@ void fetch(struct cpu_internals *cpu, struct device_manager *device_manager) {
   uint8_t data =  read_device(device_manager, READ(cpu->address_register));
   WRITE(cpu->instruction_register, data);
   WRITE(cpu->address_register, READ(cpu->program_counter));
-  if(data != BRK){
-    INCREMENT(cpu->program_counter);
-  }
+  INCREMENT(cpu->program_counter);
 }
 
 void reset(struct cpu_internals *cpu, struct device_manager *device_manager) {
@@ -966,6 +964,8 @@ void bpl_handler(struct cpu_internals *cpu, struct device_manager *device_manage
 void brk_handler(struct cpu_internals *cpu, struct device_manager *device_manager) {
   switch (cpu->micro_step) {
     case S0: {
+      cpu->program_counter.output--; // Dirty trick to avoid if in fetch
+      cpu->program_counter.input--; // Dirty trick to avoid if in fetch
       cpu->micro_step = S1;
       SET_HIGH(cpu->address_register, 0x01);
       SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
