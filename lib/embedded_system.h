@@ -4,9 +4,11 @@
 
 #ifndef RETRO_EMULATOR_LIB_EMBEDDED_SYSTEM_H_
 #define RETRO_EMULATOR_LIB_EMBEDDED_SYSTEM_H_
+
+#include "common.h"
 #include "register.h"
 #include "device_manager.h"
-#include "log.h"
+#include "opcodes.h"
 
 enum cpu_state {
   RESET = 0,
@@ -40,8 +42,6 @@ struct cpu_internals {
   enum cpu_state state;
   enum micro_state micro_step;
 };
-
-
 
 void tick(struct cpu_internals cpu[static 1], struct device_manager device_manager[static 1]);
 struct cpu_internals new_cpu(void);

@@ -1,17 +1,17 @@
-#include <stdio.h>
-#include "lib/embedded_system.h"
+#include "lib/common.h"
 #include "lib/device_manager.h"
 #include "lib/memory.h"
-#include "lib/opcodes.h"
+#include "lib/log.h"
+#include "lib/embedded_system.h"
 
-static void load_fibonacci_program(struct device_manager* device_manager);
+static void load_fibonacci_program(struct device_manager *device_manager);
 
 int main(int argc, char *argv[]) {
   // Initialize manager
-    struct device_manager device_manager = new_device_manager();
+  struct device_manager device_manager = new_device_manager();
 
   // Initialize memory
-  struct memory memory = new_memory(0x0000,0xffff);
+  struct memory memory = new_memory(0x0000, 0xffff);
 
   // Set memory as bus device
   struct bus_device memory_bus = new_memory_bus(&memory);
@@ -27,11 +27,11 @@ int main(int argc, char *argv[]) {
     tick(&cpu, &device_manager);
     index++;
   }
-  LOG_MEMORY(0x0000,0x002, memory.slots);
+  LOG_MEMORY(0x0000, 0x002, memory.slots);
   return 0;
 }
 
-void load_fibonacci_program(struct device_manager* device_manager) {
+void load_fibonacci_program(struct device_manager *device_manager) {
   // Set the reset vector to point to $1000
   write_device(device_manager, 0xfffc, 0x00); // Low byte of reset vector
   write_device(device_manager, 0xfffd, 0x10); // High byte of reset vector
@@ -105,7 +105,6 @@ void load_fibonacci_program(struct device_manager* device_manager) {
 
   write_device(device_manager, 0xFFFE, 0x1C);
   write_device(device_manager, 0xFFFF, 0x10);
-
 
   printf("Fibonacci program loaded into memory.\n");
 }

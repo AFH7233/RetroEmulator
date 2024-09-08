@@ -13,4 +13,5 @@ add_executable(retro_emulator emulator.c
         lib/memory.h
         lib/memory.c
         lib/opcodes.h
-        lib/log.h)
+        lib/log.h
+        lib/common.h)

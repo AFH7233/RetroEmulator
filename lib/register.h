@@ -4,8 +4,7 @@
 
 #ifndef RETRO_EMULATOR_LIB_REGISTER_H_
 #define RETRO_EMULATOR_LIB_REGISTER_H_
-#include <stdint.h>
-#include <stdbool.h>
+#include "common.h"
 
 #define N_FLAG 7
 #define V_FLAG 6
@@ -72,7 +71,5 @@ struct register_u16 {
 #define OR_BIT(reg, mask) ((reg).input |= (mask))
 
 #define AND_BIT(reg, mask) ((reg).input &= (mask))
-
-
 
 #endif //RETRO_EMULATOR_LIB_REGISTER_H_
