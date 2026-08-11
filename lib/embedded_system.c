@@ -1970,17 +1970,19 @@ static void rti_handler(struct cpu_internals cpu[static 1], struct device_manage
     case S3: {
       cpu->micro_step = S4;
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
-      SET_LOW(cpu->program_counter, data);
+      WRITE(cpu->temp_register, data);
       SET_LOW(cpu->address_register, READ(cpu->stack_pointer));
       return;
     }
     case S4: {
       cpu->state = FETCH;
       uint8_t data = read_device(device_manager, READ(cpu->address_register));
-      SET_HIGH(cpu->program_counter, data);
-      INCREMENT(cpu->program_counter);
-      SET_LOW(cpu->address_register, GET_LOW(cpu->program_counter));
-      SET_HIGH(cpu->address_register, data);
+      uint16_t popped_pc = ((uint16_t)data) << 8 | READ(cpu->temp_register);
+      SET_LOW(cpu->address_register, popped_pc & 0xFF);
+      SET_HIGH(cpu->address_register, (popped_pc >> 8) & 0xFF);
+      uint16_t next_pc = popped_pc + 1;
+      SET_LOW(cpu->program_counter, next_pc & 0xFF);
+      SET_HIGH(cpu->program_counter, (next_pc >> 8) & 0xFF);
       return;
     }
     default: fprintf(stderr, "BRK Wrong!!!!");
@@ -2636,7 +2638,6 @@ static void absolute_x_read(struct cpu_internals *cpu,
       uint16_t result = add_address(READ(cpu->temp_register), READ(cpu->x_register));
       SET_LOW(cpu->address_register, (result & 0x00ff));
       SET_HIGH(cpu->address_register, data);
-      INCREMENT(cpu->program_counter);
       cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S2 : S3;
       return;
     }
@@ -2674,7 +2675,6 @@ static void absolute_y_read(struct cpu_internals *cpu,
       uint16_t result = add_address(READ(cpu->temp_register), READ(cpu->y_register));
       SET_LOW(cpu->address_register, (result & 0x00ff));
       SET_HIGH(cpu->address_register, data);
-      INCREMENT(cpu->program_counter);
       cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S2 : S3;
       return;
     }
@@ -2907,7 +2907,6 @@ static void absolute_x_write_back(struct cpu_internals *cpu,
       cpu->micro_step = (result & CARRY_MASK_U16) > 0 ? S2 : S3;
       SET_LOW(cpu->address_register, result & 0xFF);
       SET_HIGH(cpu->address_register, data);
-      INCREMENT(cpu->program_counter);
       return;
     }
     case S2: {
