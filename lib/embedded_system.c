@@ -2971,15 +2971,36 @@ uint8_t adc(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
 
 uint8_t sbc(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
   uint16_t carry = (READ(cpu->status_register) & C_MASK_SET);
-  uint16_t result = ((uint16_t) acc) - ((uint16_t) data) - (!carry);
-  bool bothNegative = ((data & N_MASK_SET) == N_MASK_SET) && ((acc & N_MASK_SET) == N_MASK_SET);
-  bool bothPositive = ((data & N_MASK_SET) == 0) && ((acc & N_MASK_SET) == 0);
-  bool V = (bothNegative && ((data & N_MASK_SET) == 0)) || (bothPositive && ((data & N_MASK_SET) == N_MASK_SET));
-  SET_OR_CLEAR_BIT(cpu->status_register, ((result & CARRY_MASK_U16) > 0), C_FLAG);
-  SET_OR_CLEAR_BIT(cpu->status_register, ((result & 0xff) == 0), Z_FLAG);
-  SET_OR_CLEAR_BIT(cpu->status_register, ((result & N_MASK_SET) > 0), N_FLAG);
-  SET_OR_CLEAR_BIT(cpu->status_register, V, V_FLAG);
-  return (uint8_t) (result & 0x000000ff);
+  if (READ(cpu->status_register) & D_MASK_SET) {
+    uint8_t al = (acc & 0x0F) - (data & 0x0F) - !carry;
+    uint8_t ah = (acc >> 4) - (data >> 4);
+
+    uint16_t bin_result = ((uint16_t) acc) - ((uint16_t) data) - !carry;
+    SET_OR_CLEAR_BIT(cpu->status_register, ((bin_result & 0xff) == 0), Z_FLAG);
+    SET_OR_CLEAR_BIT(cpu->status_register, ((bin_result & N_MASK_SET)> 0), N_FLAG);
+    bool V = (((uint16_t) acc ^ (uint16_t) data) & ((uint16_t)acc ^ bin_result) & 0x80) != 0;
+    SET_OR_CLEAR_BIT(cpu->status_register, V, V_FLAG);
+
+    if ( al < 0) {
+      al -= 0x06;
+      ah--;
+    }
+    bool decimal_carry = (ah >= 0);
+    if ( ah < 0) {
+      ah -= 0x06;
+    }
+
+    SET_OR_CLEAR_BIT(cpu->status_register, decimal_carry, C_FLAG);
+    return ((ah & 0x0F) << 4) | (al & 0x0F);
+  } else {
+      uint16_t result = ((uint16_t) acc) + ((uint16_t) ~data) + (carry);
+      SET_OR_CLEAR_BIT(cpu->status_register, ((result & CARRY_MASK_U16) > 0), C_FLAG);
+      SET_OR_CLEAR_BIT(cpu->status_register, ((result & 0xff) == 0), Z_FLAG);
+      SET_OR_CLEAR_BIT(cpu->status_register, ((result & N_MASK_SET) > 0), N_FLAG);
+      bool V = (((uint16_t) acc ^ (uint16_t) data) & ((uint16_t)acc ^ result) & 0x80) != 0;
+      SET_OR_CLEAR_BIT(cpu->status_register, V, V_FLAG);
+      return (uint8_t) (result & 0x000000ff);
+  }
 }
 
 uint8_t cmp(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
