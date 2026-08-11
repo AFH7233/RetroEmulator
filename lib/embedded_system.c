@@ -3061,11 +3061,10 @@ uint8_t rol(struct cpu_internals *cpu, uint8_t data) {
 uint8_t ror(struct cpu_internals *cpu, uint8_t data) {
   uint16_t extended_data = ((uint16_t) data);
   uint16_t carry = (READ(cpu->status_register) & C_MASK_SET);
-  uint16_t result = 1 >> extended_data;
+  uint16_t result =  (extended_data >> 1) | (carry << 7);
   SET_OR_CLEAR_BIT(cpu->status_register, (result & 0xff) == 0, Z_FLAG);
   SET_OR_CLEAR_BIT(cpu->status_register, (result & N_MASK_SET) > 0, N_FLAG);
   SET_OR_CLEAR_BIT(cpu->status_register, (extended_data & 0x01) > 0, C_FLAG);
-  result |= (carry << 7);
   return (uint8_t) (result & 0x000000ff);
 }
 
@@ -3086,7 +3085,7 @@ uint8_t inc(struct cpu_internals *cpu, uint8_t data) {
 
 uint8_t lsr(struct cpu_internals *cpu, uint8_t data) {
   uint16_t extended_data = ((uint16_t) data);
-  uint16_t result = 1 >> extended_data;
+  uint16_t result =  extended_data >> 1;
   SET_OR_CLEAR_BIT(cpu->status_register, (result & 0xff) == 0, Z_FLAG);
   SET_OR_CLEAR_BIT(cpu->status_register, 0, N_FLAG);
   SET_OR_CLEAR_BIT(cpu->status_register, (extended_data & 0x01) > 0, C_FLAG);
