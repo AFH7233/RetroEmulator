@@ -3004,8 +3004,8 @@ uint8_t sbc(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
 }
 
 uint8_t cmp(struct cpu_internals *cpu, uint8_t data, uint8_t acc) {
-  uint8_t complement = (~acc) + 1;
-  uint16_t result = ((uint16_t) data) + ((uint16_t) complement);
+  uint16_t extended_acc = (uint16_t) acc;
+  uint16_t result = extended_acc + ((uint16_t) ~data) + 1;
   SET_OR_CLEAR_BIT(cpu->status_register, (result & CARRY_MASK_U16) > 0, C_FLAG);
   SET_OR_CLEAR_BIT(cpu->status_register, (result & 0xff) == 0, Z_FLAG);
   SET_OR_CLEAR_BIT(cpu->status_register, (result & N_MASK_SET) > 0, N_FLAG);
