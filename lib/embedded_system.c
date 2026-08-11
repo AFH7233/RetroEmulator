@@ -1174,7 +1174,7 @@ static void cmp_index_indirect_handler(struct cpu_internals cpu[static 1],
 
 static void cmp_indirect_index_handler(struct cpu_internals cpu[static 1],
                                        struct device_manager device_manager[static 1]) {
-  indirect_index_read(cpu, device_manager, and);
+  indirect_index_read(cpu, device_manager, cmp);
 }
 
 static void cpx_immediate_handler(struct cpu_internals cpu[static 1], struct device_manager device_manager[static 1]) {
